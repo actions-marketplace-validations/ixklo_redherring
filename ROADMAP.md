@@ -6,7 +6,7 @@ LLM required.
 ## Done in 0.1
 
 - `scan`, `why`, text/Markdown/JSON output, exit codes for scripts and agents
-- 19 test-runner formats, 11 infrastructure causes, roll-up and policy-check filtering
+- Over 20 test-runner output formats, 12 infrastructure causes, roll-up and policy-check filtering
 - Composite GitHub Action with job summaries and PR comments
 - Flake ledger that outlives GitHub's run retention
 - A skill for coding agents
@@ -15,6 +15,10 @@ LLM required.
 
 - **Hidden flakes.** Tests that runners retry inside a *green* job (Playwright `flaky`, nextest `FLAKY`,
   pytest `RERUN`) never make a run red, so they're invisible today. Sample green logs to find them.
+  Evidence it's worth it: even inside the few *failed* logs of a 75-repo study, Playwright's own retries
+  hid 42 flaky tests (Airflow, n8n, Supabase).
+- **Fewer "unknown" jobs.** In the study about four in ten red-herring jobs name neither a test nor a known
+  cause. Audits show about half of those have a visible cause in a format not yet parsed.
 - **Quarantine helpers.** Generate reviewable skip/retry config per runner from the ledger (pytest markers,
   Jest lists, nextest filters), always as a pull request, never silently.
 - **A stable, versioned JSON schema** for dashboards and bots.

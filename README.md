@@ -2,7 +2,7 @@
 
 **Find the CI failures that weren't your fault.**
 
-redherring reads the GitHub Actions history your repo already has and finds every run that went red, then turned green when someone re-ran the *same commit*. Nothing in the code changed between those two attempts, so whatever failed first was not caused by the commit: a flaky test, a network blip, a package registry hiccup, a runner that vanished. redherring opens the failed logs, names the tests (19 test-runner formats) or the infrastructure cause, and ranks them.
+redherring reads the GitHub Actions history your repo already has and finds every run that went red, then turned green when someone re-ran the *same commit*. Nothing in the code changed between those two attempts, so whatever failed first was not caused by the commit: a flaky test, a network blip, a package registry hiccup, a runner that vanished. redherring opens the failed logs, names the tests (over 20 test-runner output formats) or the infrastructure cause, and ranks them.
 
 Then, when a build fails, `redherring why` tells you (or your coding agent) which failures are known red herrings and which ones look real.
 
@@ -35,7 +35,7 @@ redherring scan owner/repo --workflow ci.yml --format md > FLAKY.md
 You get:
 
 - **Flaky tests**: each failed and then passed on a re-run of the same commit, with how often, on how many commits, on which OS (plenty of tests only flake on Windows), and when last seen.
-- **Flaky jobs with no test named**, grouped by cause: `network`, `package registry`, `rate limited`, `runner lost`, `job timeout`, `out of memory`, `disk full`, `service startup`, `GitHub service`, `AI provider`, `many tests at once` (an environment problem, not ten flaky tests), or `unknown`.
+- **Flaky jobs with no test named**, grouped by cause: `network`, `package registry`, `rate limited`, `runner lost`, `runner environment`, `job timeout`, `out of memory`, `disk full`, `service startup`, `test worker crash`, `GitHub service`, `AI provider`, `many tests at once` (an environment problem, not ten flaky tests), or `unknown`.
 - **What it cost**: runner time burned by the failed jobs, and how long commits sat red waiting for someone to press re-run.
 
 `--format json` gives everything, including example job links, for your own dashboards.
@@ -167,11 +167,11 @@ Supported test output:
 | ecosystem | runners |
 |---|---|
 | Python | pytest (incl. xdist, pytest-rerunfailures), unittest |
-| JavaScript / TypeScript | Jest, Vitest, Playwright (incl. its own retries), Mocha, node:test, Bun, TAP (QUnit/testem) |
+| JavaScript / TypeScript | Jest, Vitest (incl. workspaces), Playwright (incl. its own retries), Mocha, node:test (spec and TAP), Bun, TAP (QUnit/testem) |
 | Go | `go test`, gotestsum, test timeouts |
-| Rust | `cargo test`, cargo-nextest (incl. retries) |
+| Rust | `cargo test`, cargo-nextest (incl. retries), `failed tests:` lists (Deno and other file-based runners) |
 | Ruby | RSpec, Minitest |
-| JVM | Maven Surefire, Gradle |
+| JVM | Maven Surefire, Gradle (incl. verbose test logging) |
 | others | PHPUnit, .NET (`dotnet test`), CTest, XCTest, ExUnit |
 
 Missing yours? A parser is one function and a test with a real log excerpt. See [CONTRIBUTING.md](CONTRIBUTING.md).
