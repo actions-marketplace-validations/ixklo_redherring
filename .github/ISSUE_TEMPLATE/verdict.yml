@@ -1,0 +1,23 @@
+name: Wrong verdict
+description: redherring called something flaky that wasn't, or missed a red herring.
+labels: [verdict]
+body:
+  - type: input
+    id: run
+    attributes:
+      label: Run or job URL
+    validations:
+      required: true
+  - type: textarea
+    id: said
+    attributes:
+      label: What redherring said
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What was actually going on
+    validations:
+      required: true

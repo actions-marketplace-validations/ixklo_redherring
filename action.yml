@@ -1,0 +1,70 @@
+name: redherring
+description: Explain CI failures from your own Actions history. Known flaky tests and infrastructure hiccups vs failures that look real.
+author: ixklo
+branding:
+  icon: search
+  color: red
+
+inputs:
+  command:
+    description: "`why` explains one failed run; `scan` reports the repo's flaky tests and jobs."
+    default: why
+  run-id:
+    description: Run to explain (`why`). Defaults to the run that triggered a `workflow_run` event, else the current run.
+    default: ""
+  days:
+    description: How many days of history to learn from.
+    default: "30"
+  workflow:
+    description: "`scan` only: limit to one workflow (name or file)."
+    default: ""
+  fail-on-real:
+    description: "`why` only: fail this step when a failure looks real."
+    default: "false"
+  github-token:
+    description: Token with `actions: read` on the repository.
+    default: ${{ github.token }}
+
+outputs:
+  recommendation:
+    description: "`why` only: rerun, investigate, unclear or \"nothing failed\"."
+    value: ${{ steps.redherring.outputs.recommendation }}
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+    - id: redherring
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        RH_COMMAND: ${{ inputs.command }}
+        RH_RUN_ID: ${{ inputs.run-id || github.event.workflow_run.id || github.run_id }}
+        RH_DAYS: ${{ inputs.days }}
+        RH_WORKFLOW: ${{ inputs.workflow }}
+        RH_FAIL_ON_REAL: ${{ inputs.fail-on-real }}
+        RH_REPO: ${{ github.repository }}
+      run: |
+        set -uo pipefail
+        rh() { uvx --quiet --from "$GITHUB_ACTION_PATH" redherring "$@"; }
+        case "$RH_COMMAND" in
+          why)
+            rh why "$RH_RUN_ID" --repo "$RH_REPO" --days "$RH_DAYS" --format json -q > "$RUNNER_TEMP/redherring.json"
+            code=$?
+            if [ "$code" -eq 2 ]; then exit 2; fi
+            rh why "$RH_RUN_ID" --repo "$RH_REPO" --days "$RH_DAYS" --format md -q >> "$GITHUB_STEP_SUMMARY"
+            rec=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['recommendation'])" "$RUNNER_TEMP/redherring.json")
+            echo "recommendation=$rec" >> "$GITHUB_OUTPUT"
+            echo "redherring: $rec"
+            if [ "$RH_FAIL_ON_REAL" = "true" ] && [ "$code" -eq 1 ]; then exit 1; fi
+            ;;
+          scan)
+            args=(scan "$RH_REPO" --days "$RH_DAYS" --format md -q)
+            if [ -n "$RH_WORKFLOW" ]; then args+=(--workflow "$RH_WORKFLOW"); fi
+            rh "${args[@]}" >> "$GITHUB_STEP_SUMMARY"
+            ;;
+          *)
+            echo "::error::command must be why or scan, got '$RH_COMMAND'"
+            exit 2
+            ;;
+        esac

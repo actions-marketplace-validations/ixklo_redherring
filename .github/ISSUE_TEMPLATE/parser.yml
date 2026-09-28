@@ -1,0 +1,23 @@
+name: Test runner not recognised
+description: redherring didn't name the failing tests in your CI log.
+labels: [parser]
+body:
+  - type: input
+    id: runner
+    attributes:
+      label: Test runner and version
+      placeholder: e.g. pytest 8.3 with pytest-xdist, or Jest 30
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log excerpt
+      description: The lines of the failed job's log that name the failing tests. Public repos only; remove secrets.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Job URL (optional, public repos)
