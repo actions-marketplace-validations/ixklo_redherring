@@ -46,7 +46,10 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
     ),
     (
         "disk full",
-        re.compile(r"No space left on device|\bENOSPC\b|ResourceExhausted: failed to copy files"),
+        re.compile(
+            r"No space left on device|\bENOSPC\b|ResourceExhausted: failed to copy files"
+            r"|There is not enough space on the disk"
+        ),
     ),
     (
         "runner environment",
@@ -94,7 +97,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|CondaHTTPError|HTTP \d{3} (?:Forbidden|Too Many Requests|Service Unavailable) for url"
             r"|could not download file from|error downloading file|failed to fetch anonymous token"
             r"|error NU1301: .*(?:40[39]|5\d\d)|HTTP status server error \(5\d\d"
-            r"|Unable to find installation candidates for"
+            r"|Unable to find installation candidates for|No such image: |Plugin \[id: '[^']+'.*\] was not found"
         ),
     ),
     (
@@ -109,6 +112,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|fatal: unable to access 'https?://[^']*': (?!The requested URL returned error: 4)"
             r"|\boperation timed out\b|Unexpected HTTP response: 5\d\d|Canceled because of SSL destruction"
             r"|The requested URL returned error: 5\d\d|Server returned HTTP response code: 5\d\d for URL"
+            r"|\bfetch failed\b|Installation error: Request timed out"
             r"|stream error: stream ID \d+; INTERNAL_ERROR|proxy\.golang\.org.*(?:EOF|reset|timeout)"
             r"|HTTP Error 5\d\d: (?:Internal Server Error|Bad Gateway|Service Unavailable|Gateway Time-?out)"
             r"|'git', 'clone'.*returned non-zero exit status 128|RPC failed; curl|early EOF"
@@ -130,7 +134,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"Failed to (?:save|restore) cache|Cache service responded with [45]\d\d|Unable to reserve cache"
             r"|Failed to (?:Create|Finalize)Artifact|Artifact upload failed|Unable to (?:download|upload) artifact"
             r"|The operation was canceled\.\s*$|Internal Server Error.*api\.github\.com"
-            r"|HTTP 5\d\d \(https?://api\.github\.com"
+            r"|HTTP 5\d\d \(https?://api\.github\.com|We couldn't respond to your request in time"
         ),
     ),
 ]

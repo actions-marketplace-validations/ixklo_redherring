@@ -80,7 +80,7 @@ _JEST_FILE = re.compile(rf"^\s*FAIL\s+(?:.*?\s)?({_JS_FILE})(?:\s+\([^)]*\))?\s*
 _JEST_TITLE = re.compile(r"^\s*● (.+?)\s*$")
 _JEST_NOT_TESTS = ("Console", "Test suite failed to run", "process.exit called")
 _VITEST = re.compile(
-    rf"^\s*(?:×|✗|❯)?\s*FAIL\s+(?:\|[^|]+\|\s+)?({_JS_FILE}) > (.+?)(?:\s+\[[^\]]+\])?(?:\s+\d+(?:\.\d+)?m?s)?\s*$"
+    rf"^\s*(?:×|✗|❯)?\s*FAIL\s+(?:\|[^|]+\|\s+|[\w@/.-]+\s+(?=\S+ > ))?({_JS_FILE}) > (.+?)(?:\s+\[[^\]]+\])?(?:\s+\d+(?:\.\d+)?m?s)?\s*$"
 )
 _VITEST_FILE = re.compile(rf"^\s*FAIL\s+(?:\|[^|]+\|\s+)?({_JS_FILE})\s+\[ [^\]]+ \]\s*$")
 _BUN = re.compile(r"^\(fail\) (.+?)(?: \[[\d.]+m?s\])?\s*$")
@@ -101,7 +101,7 @@ def parse_jest(lines: list[str]) -> list[TestFailure]:
         if "FAIL" in line and " > " not in line and (m := _JEST_FILE.match(line)):
             current_file = _norm_path(m[1])
             continue
-        if "●" in line and (m := _JEST_TITLE.match(line)):
+        if current_file and "●" in line and (m := _JEST_TITLE.match(line)):
             title = m[1]
             if title.startswith(_JEST_NOT_TESTS):
                 if title.startswith("Test suite failed to run") and current_file:
@@ -109,8 +109,7 @@ def parse_jest(lines: list[str]) -> list[TestFailure]:
                         TestFailure("jest", current_file, FAILED, "Test suite failed to run")
                     )
                 continue
-            test_id = f"{current_file} › {title}" if current_file else title
-            out.append(TestFailure("jest", test_id))
+            out.append(TestFailure("jest", f"{current_file} › {title}"))
     return out
 
 
@@ -137,6 +136,7 @@ def parse_bun(lines: list[str]) -> list[TestFailure]:
 
 _NODE_FAILING = re.compile(r"^\s*✖ failing tests:\s*$")
 _NODE_SUMMARY_ITEM = re.compile(r"^\s*✖ (.+?)(?: \([\d.]+m?s\))?\s*$")
+_NODE_TEST_AT = re.compile(r"^\s*test at (\S+?):\d+:\d+\s*$")
 
 
 def parse_node_spec(lines: list[str]) -> list[TestFailure]:
@@ -147,11 +147,21 @@ def parse_node_spec(lines: list[str]) -> list[TestFailure]:
             for line in lines
             if "✖" in line and (m := _NODE_SPEC.match(line))
         ]
-    # The summary names suites and tests; keep the leaves (a suite is followed by its tests).
-    names = [
-        m[1] for line in lines[start + 1 :] if "✖" in line and (m := _NODE_SUMMARY_ITEM.match(line))
-    ]
-    names = [n for n in names if not re.match(r"\d+ problems? \(", n)]
+    names: list[str] = []
+    where = ""
+    rest = lines[start + 1 :]
+    for i, line in enumerate(rest):
+        if m := _NODE_TEST_AT.match(line):
+            where = _norm_path(m[1])
+            continue
+        if "✖" not in line or not (m := _NODE_SUMMARY_ITEM.match(line)):
+            continue
+        after = next((x for x in rest[i + 1 : i + 4] if x.strip()), "")
+        # A test cancelled because its suite failed (usually a broken hook) didn't fail itself.
+        if "did not finish before its parent" in after or "cancelledByParent" in after:
+            continue
+        if not re.match(r"\d+ problems? \(", m[1]):
+            names.append(f"{where} › {m[1]}" if where else m[1])
     return [TestFailure("node:test", n) for n in dict.fromkeys(names)]
 
 
@@ -300,6 +310,32 @@ def parse_failed_list(lines: list[str]) -> list[TestFailure]:
             if not nxt.startswith((" ", "\t")) or not nxt.strip():
                 break
             out.append(TestFailure("test-runner", nxt.strip()))
+    return out
+
+
+_GTEST = re.compile(r"^\[\s+FAILED\s+\] ([A-Za-z_][\w/]*\.[\w/]+)(?:, where .*| \(\d+ ms\))?\s*$")
+_COMPILETEST = re.compile(r"^\s+\[([\w-]+)\] (tests/\S+)\s*$")
+
+
+def parse_gtest(lines: list[str]) -> list[TestFailure]:
+    return [
+        TestFailure("gtest", m[1])
+        for line in lines
+        if line.startswith("[  FAILED") and (m := _GTEST.match(line))
+    ]
+
+
+def parse_compiletest(lines: list[str]) -> list[TestFailure]:
+    """rust-lang/rust's compiletest lists failures as "    [suite] tests/path" after "failures:"."""
+    out = []
+    for i, line in enumerate(lines):
+        if line.strip() != "failures:":
+            continue
+        for nxt in lines[i + 1 : i + 300]:
+            if m := _COMPILETEST.match(nxt):
+                out.append(TestFailure("compiletest", f"[{m[1]}] {m[2]}"))
+            elif nxt.strip() and not nxt.startswith((" ", "\t")):
+                break
     return out
 
 
@@ -452,7 +488,9 @@ PARSERS: list[Callable[[list[str]], list[TestFailure]]] = [
     parse_playwright,
     parse_go,
     parse_rust,
+    parse_compiletest,
     parse_failed_list,
+    parse_gtest,
     parse_rspec,
     parse_minitest,
     parse_junit,

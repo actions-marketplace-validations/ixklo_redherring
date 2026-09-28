@@ -518,8 +518,8 @@ AUDIT2 = [
         "✖ SFTP Monitor (real OpenSSH server) (1575.43ms)\n✖ failing tests:\n\ntest at test/a.js:3:5\n"
         "✖ check() sets status to UP with correct password\n✖ check() throws when passphrase is wrong\n",
         [
-            ("node:test", "check() sets status to UP with correct password"),
-            ("node:test", "check() throws when passphrase is wrong"),
+            ("node:test", "test/a.js › check() sets status to UP with correct password"),
+            ("node:test", "test/a.js › check() throws when passphrase is wrong"),
         ],
     ),
     (
@@ -607,3 +607,71 @@ def test_more_rollup_shapes(text):
 def test_study2_signatures(line, category):
     cause = classify([line, "##[error]Process completed with exit code 1."])
     assert cause is not None and cause.category == category
+
+
+AUDIT3 = [
+    (
+        "node:test tests cancelled by their parent are not failures",
+        "✖ failing tests:\n\ntest at test/sftp.js:360:9\n✖ check() sets status to UP with correct password\n"
+        "  'test did not finish before its parent and was cancelled'\n",
+        [],
+    ),
+    (
+        "bullets outside a Jest FAIL block are not tests",
+        "● go@install     51ms\n● api@build      5.3s\n✗ worker 2m 16s (null)\n",
+        [],
+    ),
+    (
+        "googletest",
+        "[  FAILED  ] Photo_CalibrateDebevec.regression (1818 ms)\n[  FAILED  ] 1 test, listed below:\n"
+        "[  FAILED  ] Photo_CalibrateDebevec.regression\n[  FAILED  ] Params/Foo.Bar/0, where GetParam() = 3\n",
+        [("gtest", "Photo_CalibrateDebevec.regression"), ("gtest", "Params/Foo.Bar/0")],
+    ),
+    (
+        "rust compiletest",
+        "failures:\n    [debuginfo-lldb] tests/debuginfo/tuple-in-struct.rs\n\ntest result: FAILED. 231 passed; 1 failed\n",
+        [("compiletest", "[debuginfo-lldb] tests/debuginfo/tuple-in-struct.rs")],
+    ),
+    (
+        "vitest project without pipes",
+        " FAIL  unit  plugins/vite/__tests__/i18n-prune.spec.ts > prunes unused keys\n",
+        [("vitest", "plugins/vite/__tests__/i18n-prune.spec.ts > prunes unused keys")],
+    ),
+]
+
+
+@pytest.mark.parametrize("label,text,expected", AUDIT3, ids=[a[0] for a in AUDIT3])
+def test_audit3_formats(label, text, expected):
+    assert ids(text) == sorted(expected)
+
+
+@pytest.mark.parametrize(
+    "line,category",
+    [
+        (
+            "compile: writing output: write $WORK/b500/_pkg_.a: There is not enough space on the disk.",
+            "disk full",
+        ),
+        ('"message": "No such image: lscr.io/linuxserver/openssh-server:10.3"', "package registry"),
+        (
+            "Plugin [id: 'io.github.gradle-nexus.publish-plugin', version: '2.0.0'] was not found in any of the following sources:",
+            "package registry",
+        ),
+        ("TypeError: fetch failed", "network"),
+        ("sharp: Installation error: Request timed out", "network"),
+        (
+            "HttpError: We couldn't respond to your request in time. Sorry about that.",
+            "GitHub service",
+        ),
+    ],
+)
+def test_audit3_signatures(line, category):
+    cause = classify([line, "##[error]Process completed with exit code 1."])
+    assert cause is not None and cause.category == category
+
+
+def test_kafka_style_rollup():
+    kind, *_ = explain_log(
+        "Required jobs did not complete successfully\n##[error]Process completed with exit code 1.\n"
+    )
+    assert kind == "summary"
