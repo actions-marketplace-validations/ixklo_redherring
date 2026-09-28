@@ -45,6 +45,31 @@ def test_round_trip_and_merge(tmp_path):
     assert next(j for j in merged if j.job_id == 1001).hint == "newer"
 
 
+def test_old_entries_lose_spelled_out_colour_codes(tmp_path):
+    fake = Fake()
+    history(fake)
+    jobs = scanner(fake).scan(REPO, days=30, until=UNTIL).failed_jobs
+    path = tmp_path / "ledger.json"
+    ledger.save(path, REPO, jobs)
+    # What 0.2.0 could have saved: colour codes spelled out in snippets.
+    data = json.loads(path.read_text(encoding="utf-8"))
+    for e in data["entries"]:
+        for t in e["tests"]:
+            t["message"] = "\\x1b[31m" + t["message"] + "\\x1b[0m"
+        if e.get("infra"):
+            e["infra"]["evidence"] = "^[[33m" + e["infra"]["evidence"] + "^[[0m"
+        e["hint"] = "\\033[1m" + e["hint"] + "\\033[0m"
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+    def snippets(js):
+        return sorted(
+            (j.job_id, [t.message for t in j.tests], j.infra and j.infra.evidence, j.hint)
+            for j in js
+        )
+
+    assert snippets(ledger.load(path, REPO)) == snippets(jobs)
+
+
 def test_wrong_repo_or_version_is_refused(tmp_path):
     path = tmp_path / "ledger.json"
     ledger.save(path, "other/repo", [])

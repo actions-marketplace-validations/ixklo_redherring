@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from redherring.infra import classify, last_output
-from redherring.logtext import clean_lines
+from redherring.logtext import clean_lines, strip_color
 from redherring.parsers import FAILED, FLAKY, parse_failures
 from redherring.scan import KIND_INFRA, KIND_TESTS, KIND_UNKNOWN, explain_log
 
@@ -286,6 +286,68 @@ def test_clean_lines_strips_timestamps_ansi_and_bom():
     assert clean_lines(raw) == [" FAIL  a.test.ts > b", "next"]
 
 
+# Backslash-u spellings are assembled so no tool on the way turns them into real ESC bytes.
+U = "\\" + "u"
+
+
+@pytest.mark.parametrize(
+    "line,plain",
+    [
+        # Real escapes beyond colours: tput sgr0's charset reset, hyperlinks, save/restore.
+        ("\x1b(B\x1b[mdone", "done"),
+        ("\x1b]8;;https://example.com\x07docs\x1b]8;;\x07", "docs"),
+        ("\x1b7saved\x1b8", "saved"),
+        # Spelled out as text: a repr() in an assertion, echo without -e, JSON, Rust, ...
+        ("assert '\\x1b[1;33mWARN\\x1b[0m' == 'WARN'", "assert 'WARN' == 'WARN'"),
+        ("\\033[1;31mERROR\\033[0m: build failed", "ERROR: build failed"),
+        (f'"{U}001b[31mfail{U}001b[39m"', '"fail"'),
+        (f'"\\{U}001B[31mdouble\\{U}001B[39m"', '"double"'),
+        (U + "{1b}[1mbold" + U + "{1b}[0m", "bold"),
+        ("\\e[32mok\\e[0m \\e[2K", "ok "),
+        ("^[[36;1mcargo test^[[0m", "cargo test"),
+        ("\u241b[33mwarn\u241b[0m", "warn"),
+        # The escape byte was lost on the way.
+        ("[31mFAILED[0m tests/a.py::t", "FAILED tests/a.py::t"),
+        ("[31m\u2715[39m renders", "\u2715 renders"),
+        ("FAILED t.py::test_x[1m] - [1;33mslow[0m", "FAILED t.py::test_x[1m] - slow"),
+        # Not colour codes.
+        ("tests/a.py::test_timeout[5m]", "tests/a.py::test_timeout[5m]"),
+        ("retry in [5m", "retry in [5m"),
+        ("grep -E '^[[:space:]]+$'", "grep -E '^[[:space:]]+$'"),
+        ("[[ $v =~ ^[[a-z]+$ ]]", "[[ $v =~ ^[[a-z]+$ ]]"),
+        ("C:\\ext\\[x]\\e", "C:\\ext\\[x]\\e"),
+    ],
+)
+def test_strip_color(line, plain):
+    assert strip_color(line) == plain
+
+
+def test_colour_codes_in_the_log_text_do_not_reach_snippets():
+    tests_log = (
+        "[31mFAILED[0m tests/a.py::[1mtest_b[0m - boom\n"
+        "FAILED tests/test_log.py::test_warn[1m] - assert '\\x1b[1;33mWARN\\x1b[0m slow' in out\n"
+    )
+    kind, tests, _, _ = explain_log(tests_log)
+    assert kind == KIND_TESTS
+    assert [(t.test_id, t.message) for t in tests] == [
+        ("tests/a.py::test_b", "boom"),
+        ("tests/test_log.py::test_warn[1m]", "assert 'WARN slow' in out"),
+    ]
+
+    script_log = (
+        "Run ./scripts/check.sh\n"
+        "\\033[1;31mERROR:\\033[0m lockfile is out of date\n"
+        "##[error]Process completed with exit code 1.\n"
+    )
+    assert explain_log(script_log)[3] == "ERROR: lockfile is out of date"
+
+    infra_log = (
+        "^[[31mnpm ERR! code ECONNRESET^[[0m\n##[error]Process completed with exit code 1.\n"
+    )
+    kind, _, infra, _ = explain_log(infra_log)
+    assert kind == KIND_INFRA and infra.evidence == "npm ERR! code ECONNRESET"
+
+
 @pytest.mark.parametrize(
     "line,category",
     [
@@ -491,9 +553,11 @@ def test_env_block_is_not_a_hint():
     lines = [
         "real problem",
         "  NODE_OPTIONS: --max-old-space-size=4096",
+        "  ERROR_LOG: /tmp/err.log",
         "##[error]Process completed with exit code 1.",
     ]
     assert last_output(lines) == "real problem"
+    assert last_output(["FATAL: disk quota exceeded", *lines[1:]]) == "FATAL: disk quota exceeded"
 
 
 AUDIT2 = [

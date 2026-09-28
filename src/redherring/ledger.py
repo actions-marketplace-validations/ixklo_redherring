@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .github import parse_time
 from .infra import InfraCause
+from .logtext import strip_color
 from .parsers import TestFailure
 from .scan import FailedJob
 
@@ -112,11 +113,19 @@ def _from_entry(repo: str, e: dict) -> FailedJob:
         failed_step=e.get("failed_step", ""),
         kind=e.get("kind", "unknown"),
         tests=[
-            TestFailure(t["framework"], t["test"], t.get("outcome", "failed"), t.get("message", ""))
+            TestFailure(
+                t["framework"],
+                t["test"],
+                t.get("outcome", "failed"),
+                # Entries saved before 0.2.1 can carry colour codes spelled out as text.
+                strip_color(t.get("message", "")),
+            )
             for t in e.get("tests", [])
         ],
-        infra=InfraCause(infra["category"], infra.get("evidence", "")) if infra else None,
-        hint=e.get("hint", ""),
+        infra=InfraCause(infra["category"], strip_color(infra.get("evidence", "")))
+        if infra
+        else None,
+        hint=strip_color(e.get("hint", "")),
     )
 
 

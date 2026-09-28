@@ -148,7 +148,10 @@ _NOT_A_HINT = re.compile(
     r"^\[?ELIFECYCLE\]? |^error Command failed with exit code|^npm (?:ERR!|error) (?:code|errno|path|command|A complete log)"
     r"|^DEBUG Command exited with code|^Error: Process completed with exit code|^make(?:\[\d+\])?: \*\*\*"
     r"|^warning: build failed, waiting for other jobs|^note: run with `RUST_BACKTRACE|^shell: |^env:$"
-    r"|^\+ set [+-]x|^Duration\b|HOW TO REPRODUCE|^[A-Z][A-Z0-9_]{2,}: "
+    r"|^\+ set [+-]x|^Duration\b|HOW TO REPRODUCE"
+    r"|^ERROR: Build did NOT complete successfully|^(?:FATAL|ERROR): Build failed\.?$"
+    # env: lines (NODE_OPTIONS: ...), but not "ERROR: lockfile is out of date".
+    r"|^(?!(?:ERROR|FATAL|PANIC|CRITICAL)\b)[A-Z][A-Z0-9_]{2,}: "
 )
 _LEADING_ERROR = re.compile(r"^(?:error|fatal|panic|FATAL|ERROR|Error)(?:\[[^\]]*\])?[:!]")
 _ERRORISH = re.compile(

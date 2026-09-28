@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.1 (2026-09-28)
+
+Cleaner failure snippets, from user feedback:
+
+- **No more raw colour codes in snippets.** Real escape sequences were already removed, but colour
+  codes that reached the log *as text* got through: a test quoting a coloured string
+  (`'\x1b[1;33mWARN'`), a script echoing `\033[0m` without `-e`, JSON's `\u001b[31m`, `^[[36;1m`,
+  or `[31mFAILED[0m` whose escape byte was lost. They are now removed from failure messages, infra
+  evidence and hints, in every output format. Ledgers saved by older versions are cleaned on load.
+  Lines like that also parse now: `[31mFAILED[0m tests/a.py::t` is a pytest failure.
+- Other escape sequences are removed too (`tput sgr0`'s charset reset, save/restore cursor).
+- **Better "last output" hints.** Lines like `ERROR: lockfile is out of date` were mistaken for
+  environment variables and skipped. Re-reading the 6,480 logs of the study, 63 hints changed, most
+  from a filler line to the real error (VS Code: `ERROR: "eslint" exited with 137.` instead of
+  "Finished typecheck with 0 errors").
+- Cached readings refresh on their own (the parser version changed); nothing to do.
+
 ## 0.2.0 (2026-09-28)
 
 Lighter and much cheaper on big repos, from a code review:

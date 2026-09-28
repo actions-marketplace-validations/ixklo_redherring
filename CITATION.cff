@@ -11,7 +11,7 @@ authors:
 repository-code: "https://github.com/ixklo/redherring"
 url: "https://github.com/ixklo/redherring"
 license: MIT
-version: 0.2.0
+version: 0.2.1
 date-released: 2026-09-28
 keywords:
   - flaky tests

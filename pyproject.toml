@@ -1,6 +1,6 @@
 [project]
 name = "redherring"
-version = "0.2.0"
+version = "0.2.1"
 description = "Find the CI failures that weren't your fault: flaky tests and infrastructure hiccups, mined from the GitHub Actions history you already have."
 readme = "README.md"
 requires-python = ">=3.11"
