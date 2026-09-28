@@ -349,3 +349,47 @@ def test_explain_log_test_kind():
         and cause is None
         and hint == ""
     )
+
+
+def test_vitest_whole_file_failure():
+    line = " FAIL  playground/nested-deps/__tests__/nested-deps.spec.ts [ playground/nested-deps/__tests__/nested-deps.spec.ts ]"
+    [f] = parse_failures(clean_lines(line))
+    assert (f.framework, f.test_id) == (
+        "vitest",
+        "playground/nested-deps/__tests__/nested-deps.spec.ts",
+    )
+
+
+def test_rollup_job_recognised_by_its_output():
+    text = "📝 lint → ✓ success [required to succeed]\n❌ test → 🔴 failure [required to succeed]\n##[error]Process completed with exit code 1.\n"
+    kind, *_ = explain_log(text)
+    assert kind == "summary"
+
+
+def test_hint_skips_borders_and_exit_code_echoes():
+    lines = [
+        "Error: page.goto: net::ERR_CONNECTION_REFUSED",
+        "+------------------------------------",
+        "[ELIFECYCLE] Command failed with exit code 1.",
+        "##[error]Process completed with exit code 1.",
+    ]
+    assert last_output(lines) == "Error: page.goto: net::ERR_CONNECTION_REFUSED"
+
+
+@pytest.mark.parametrize(
+    "line,category",
+    [
+        (
+            "Failed to FinalizeArtifact: Received non-retryable error: Failed request: (403) Forbidden",
+            "GitHub service",
+        ),
+        (
+            "fatal: unable to access 'https://github.com/a/b.git/': The requested URL returned error: 502",
+            "network",
+        ),
+        ("error: Unexpected HTTP response: 500", "network"),
+    ],
+)
+def test_more_infra_signatures(line, category):
+    cause = classify([line, "##[error]Process completed with exit code 1."])
+    assert cause is not None and cause.category == category

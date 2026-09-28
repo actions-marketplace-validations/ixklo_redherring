@@ -81,6 +81,7 @@ _JEST_NOT_TESTS = ("Console", "Test suite failed to run", "process.exit called")
 _VITEST = re.compile(
     rf"^\s*(?:×|✗|❯)?\s*FAIL\s+(?:\|[^|]+\|\s+)?({_JS_FILE}) > (.+?)(?:\s+\[[^\]]+\])?(?:\s+\d+(?:\.\d+)?m?s)?\s*$"
 )
+_VITEST_FILE = re.compile(rf"^\s*FAIL\s+(?:\|[^|]+\|\s+)?({_JS_FILE})\s+\[ [^\]]+ \]\s*$")
 _BUN = re.compile(r"^\(fail\) (.+?)(?: \[[\d.]+m?s\])?\s*$")
 _NODE_SPEC = re.compile(r"^\s*✖ (.+?) \([\d.]+m?s\)\s*$")
 _TAP = re.compile(r"^\s*not ok \d+(?: -)? (.+?)\s*$")
@@ -113,8 +114,13 @@ def parse_jest(lines: list[str]) -> list[TestFailure]:
 def parse_vitest(lines: list[str]) -> list[TestFailure]:
     out = []
     for line in lines:
-        if "FAIL" in line and " > " in line and (m := _VITEST.match(line)):
+        if "FAIL" not in line:
+            continue
+        if " > " in line and (m := _VITEST.match(line)):
             out.append(TestFailure("vitest", f"{_norm_path(m[1])} > {m[2]}"))
+        elif m := _VITEST_FILE.match(line):
+            # The whole file failed (a hook or import broke), not one test in it.
+            out.append(TestFailure("vitest", _norm_path(m[1]), FAILED, "test file failed"))
     return out
 
 

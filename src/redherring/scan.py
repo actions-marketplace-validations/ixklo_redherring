@@ -200,12 +200,20 @@ def failed_step(job: dict) -> str:
     return ""
 
 
+# Output of roll-up actions such as re-actors/alls-green.
+_SUMMARY_OUTPUT = re.compile(
+    r"\[required to succeed\]|Some of the required to succeed jobs failed|\[allowed to fail\]"
+)
+
+
 def explain_log(text: str) -> tuple[str, list[TestFailure], InfraCause | None, str]:
     """(kind, tests, infra cause, hint) for one failed job's log."""
     lines = clean_lines(text)
     tests = parse_failures(lines)
     if tests:
         return KIND_TESTS, tests, None, ""
+    if any(_SUMMARY_OUTPUT.search(line) for line in lines[-200:]):
+        return KIND_SUMMARY, [], None, ""
     cause = classify(lines)
     if cause:
         return KIND_INFRA, [], cause, ""
@@ -380,7 +388,7 @@ def refine_kind(job: FailedJob) -> str:
     if job.kind == KIND_TESTS:
         failed = sum(1 for t in job.tests if t.outcome != FLAKY)
         return KIND_MASS if failed > MASS_FAILURE else KIND_TESTS
-    if job.kind == KIND_INFRA:
+    if job.kind in (KIND_INFRA, KIND_SUMMARY):
         return job.kind
     if is_summary_job(job.job_name):
         return KIND_SUMMARY

@@ -82,6 +82,8 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|RemoteDisconnected|Read timed out|ReadTimeoutError|i/o timeout|connection timed out"
             r"|getaddrinfo (?:ENOTFOUND|EAI_AGAIN)|502 Bad Gateway|503 Service Unavailable|504 Gateway Time"
             r"|rpc error: code = Unavailable|keepalive ping failed|unexpected EOF while reading"
+            r"|fatal: unable to access 'https?://|\boperation timed out\b|Unexpected HTTP response: 5\d\d"
+            r"|The requested URL returned error: 5\d\d"
         ),
     ),
     (
@@ -97,7 +99,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
         "GitHub service",
         re.compile(
             r"Failed to (?:save|restore) cache|Cache service responded with [45]\d\d|Unable to reserve cache"
-            r"|Failed to CreateArtifact|Artifact upload failed|Unable to (?:download|upload) artifact"
+            r"|Failed to (?:Create|Finalize)Artifact|Artifact upload failed|Unable to (?:download|upload) artifact"
             r"|The operation was canceled\.\s*$|Internal Server Error.*api\.github\.com"
         ),
     ),
@@ -106,6 +108,11 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
 
 _GENERIC_ERROR = re.compile(
     r"Process completed with exit code \d+\.?$|The process '.*' failed with exit code \d+$"
+)
+# Lines that say nothing about the cause: exit-code echoes and the like.
+_NOT_A_HINT = re.compile(
+    r"^\[?ELIFECYCLE\]? |^error Command failed with exit code|^npm (?:ERR!|error) (?:code|errno|path|command|A complete log)"
+    r"|^DEBUG Command exited with code|^Error: Process completed with exit code|^make(?:\[\d+\])?: \*\*\*"
 )
 
 
@@ -118,7 +125,12 @@ def last_output(lines: list[str]) -> str:
                 return own[:240]
             for prev in reversed(lines[max(0, i - 40) : i]):
                 text = prev.strip()
-                if text and not text.startswith("##[") and not text.startswith("[command]"):
+                if (
+                    text
+                    and not text.startswith(("##[", "[command]"))
+                    and re.search(r"[A-Za-z]{3}", text)
+                    and not _NOT_A_HINT.search(text)
+                ):
                     return text[:240]
             return line.removeprefix("##[error]").strip()[:240]
     return ""
