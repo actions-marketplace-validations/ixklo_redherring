@@ -202,7 +202,8 @@ def runner_os(job: dict) -> str:
     ):
         if key in text:
             return name
-    return (job.get("labels") or [""])[0]
+    # Only known names: raw runner labels are repo-controlled text.
+    return "other" if job.get("labels") else ""
 
 
 def failed_step(job: dict) -> str:

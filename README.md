@@ -87,10 +87,11 @@ For every failure in the run, one verdict:
 
 | verdict | meaning |
 |---|---|
-| **RED HERRING** (known flaky) | This test failed and then passed on a re-run of the same commit in the last N days. |
+| **RED HERRING** (known flaky) | This test failed and then passed on a re-run of the same commit at least twice in the last N days. |
+| **PROBABLY FLAKY** | It did that once. Re-run once to check. |
 | **RED HERRING** (infrastructure) | The log shows a network, registry, runner, or service problem, not a test failure. |
 | **NOT THIS CHANGE** | The latest finished run on the default branch fails this same test. |
-| **LOOKS REAL** | Never seen flaking, no infrastructure cause. Probably your change. |
+| **LOOKS REAL** | Never seen flaking and no infrastructure cause, **or it already failed on an earlier attempt of this same commit**: a re-run isn't fixing it. Probably your change. |
 | **UNCLEAR** / **POLICY CHECK** | Can't tell from history, or a PR policy check (labels, linked issue) that passes once the PR is updated. |
 
 Exit codes make it scriptable: `0` all red herrings (or nothing failed), `1` something looks real, `3` unclear, `2` error.
@@ -106,8 +107,10 @@ Agents lose a lot of time "fixing" failures that were never theirs, and sometime
 ```markdown
 ## CI failures
 Before changing code because CI failed, run `redherring why <run-url> --format json`.
-- `recommendation: "rerun"`: every failure is a known flake, an infrastructure problem, or already
-  failing on main. Re-run the failed jobs (`gh run rerun <id> --failed`); don't edit code or tests for it.
+- `recommendation: "rerun"`: every failure is a flake, an infrastructure problem, or already failing
+  on main. Re-run the failed jobs once (`gh run rerun <id> --failed`); don't edit code or tests for it.
+  If it fails again, run `redherring why` on the new attempt: a test that fails twice on the same
+  commit comes back as "looks real".
 - `recommendation: "investigate"`: fix only the findings with `"red_herring": false`.
 - Never skip, loosen, or delete a test just because it is listed as flaky.
 ```
@@ -134,7 +137,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.1.1
+      - uses: ixklo/redherring@v0.1.2
         with:
           comment: true
 ```
@@ -152,7 +155,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.1.1
+      - uses: ixklo/redherring@v0.1.2
         with:
           command: scan
           days: "30"
@@ -178,7 +181,7 @@ The file is small JSON (one entry per failed job: test names, cause, commit, OS,
           path: flake-ledger.json
           key: redherring-ledger-${{ github.run_id }}
           restore-keys: redherring-ledger-
-      - uses: ixklo/redherring@v0.1.1
+      - uses: ixklo/redherring@v0.1.2
         with:
           command: scan
           ledger: flake-ledger.json

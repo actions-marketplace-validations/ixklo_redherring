@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.2 (2026-09-28)
+
+Safer verdicts, from a code review:
+
+- **A test that fails again on the same commit looks real.** `why` now checks earlier attempts of the
+  run it explains. Before, a known-flaky test that failed on the re-run too was still called a red
+  herring, which could send a coding agent round in circles re-running a real failure.
+- **One past flake isn't enough.** "Known flaky" needs two or more re-run-to-green failures; a single one
+  is "probably flaky: re-run once to check".
+- **Untrusted text is rendered as data.** Test names, failure messages and log lines can be written by
+  whoever opens a pull request. In PR comments and job summaries they're now inline code (no
+  @mentions, links or HTML); in the terminal they're shown literally.
+- **Terminal fixes.** Parametrised test names kept their `[...]` part (it was being swallowed as a style
+  tag), and a log line like `[/usr/bin]` no longer crashes `why`.
+- JSON findings have a separate `evidence` field for the text copied from the log.
+
 ## 0.1.1 (2026-09-28)
 
 - The Action is named "redherring CI" so it can be listed on the GitHub Marketplace (a GitHub account

@@ -16,15 +16,18 @@ redherring why <run-url> --format json
 
 Read `recommendation`:
 
-- `"rerun"`: every failure is a known flaky test, an infrastructure problem (network, registry, runner,
-  AI provider...), or already failing on the default branch. Re-run the failed jobs
-  (`gh run rerun <id> --failed`) and wait. Do not edit code or tests for these.
+- `"rerun"`: every failure is a flaky test, an infrastructure problem (network, registry, runner,
+  AI provider...), or already failing on the default branch. Re-run the failed jobs **once**
+  (`gh run rerun <id> --failed`) and wait. Do not edit code or tests for these. If it fails again, run
+  `redherring why` on the new attempt: a test that fails twice on the same commit comes back as
+  "looks real", and then it's yours to fix.
 - `"investigate"`: fix only the findings with `"red_herring": false`. Their `detail` says why they look
   real (never seen flaking, no infrastructure cause).
 - `"unclear"`: open the logs of the findings with `"red_herring": null` and judge them yourself.
 
 Rules:
 
+- Never re-run more than once for the same failure without asking redherring again.
 - Never skip, delete, loosen, or add retries to a test because redherring lists it as flaky. Say in your
   summary that it is a known flake and link the evidence (`history.examples`).
 - If a finding is `"already failing"`, the default branch is broken too; mention it, don't fix it in this PR

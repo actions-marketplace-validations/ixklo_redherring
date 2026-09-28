@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 from datetime import UTC, datetime
 from statistics import median, quantiles
@@ -22,10 +23,32 @@ from .why import (
     LOOKS_REAL,
     NOTHING,
     POLICY_CHECK,
+    PROBABLY_FLAKY,
     RERUN,
     UNEXPLAINED,
     Explanation,
 )
+
+# --- escaping ----------------------------------------------------------------------------
+#
+# Test ids, messages, job and step names come from CI logs and workflow files, which whoever
+# opens a pull request can control. Render them as data, never as markup:
+# - terminal: rich reads [brackets] as style tags, so wrap them in Text (shown literally);
+# - Markdown (step summaries, PR comments): inline code, where @mentions, links and HTML
+#   don't work.
+
+
+def _md_code(s: str) -> str:
+    """Untrusted text as inline code, safe inside a table cell."""
+    s = " ".join(s.split()).replace("`", "'").replace("|", "\\|")
+    return f"`{s}`" if s else ""
+
+
+def _md_text(s: str) -> str:
+    """Our own prose, safe inside a table cell (it may quote untrusted names)."""
+    s = html.escape(" ".join(s.split()), quote=False)
+    return s.replace("|", "\\|").replace("@", "@\u200b")
+
 
 # --- small formatting helpers ------------------------------------------------------------
 
@@ -111,7 +134,7 @@ def print_scan(r: ScanResult, console: Console, *, limit: int = 15) -> None:
         table.add_column("last", style="dim", no_wrap=True)
         table.add_column("test", overflow="fold", ratio=1)
         for t in named[:limit]:
-            table.add_row(str(t.times), _where_short(t), ago(t.last_seen), t.test_id)
+            table.add_row(str(t.times), _where_short(t), ago(t.last_seen), Text(t.test_id))
         console.print(table)
         if len(named) > limit:
             console.print(
@@ -147,7 +170,7 @@ def print_scan(r: ScanResult, console: Console, *, limit: int = 15) -> None:
             table.add_row(
                 str(total),
                 ", ".join(f"{k} ({v})" if v > 1 else k for k, v in counter.most_common()),
-                name,
+                Text(name),
             )
         console.print(table)
         console.print()
@@ -167,12 +190,8 @@ def print_scan(r: ScanResult, console: Console, *, limit: int = 15) -> None:
 # --- scan: markdown ---------------------------------------------------------------------
 
 
-def _md_cell(s: str) -> str:
-    return s.replace("|", "\\|").replace("\n", " ")
-
-
 def scan_markdown(r: ScanResult, *, limit: int = 25) -> str:
-    out = [f"## redherring: {r.repo}", ""]
+    out = [f"## redherring: {_md_text(r.repo)}", ""]
     out += [f"- {line}" for line in headline(r)]
     out.append("")
     named = [t for t in r.tests if t.times]
@@ -188,7 +207,7 @@ def scan_markdown(r: ScanResult, *, limit: int = 25) -> str:
         for i, t in enumerate(named[:limit], 1):
             ex = t.failures[-1].url
             out.append(
-                f"| {i} | `{_md_cell(t.test_id)}` | {t.times} | {t.commits} | {_where(t)} | "
+                f"| {i} | {_md_code(t.test_id)} | {t.times} | {t.commits} | {_where(t)} | "
                 f"{ago(t.last_seen)} | [job]({ex}) |"
             )
         if len(named) > limit:
@@ -199,7 +218,7 @@ def scan_markdown(r: ScanResult, *, limit: int = 25) -> str:
         out += ["### Flaky jobs with no test named", "", "| job | times | cause |", "|---|--:|---|"]
         for name, total, counter in causes[:limit]:
             cause = ", ".join(f"{k} ({v})" if v > 1 else k for k, v in counter.most_common())
-            out.append(f"| {_md_cell(name)} | {total} | {cause} |")
+            out.append(f"| {_md_code(name)} | {total} | {cause} |")
         out.append("")
     if r.gate_jobs:
         out.append(
@@ -289,6 +308,7 @@ def scan_json(r: ScanResult) -> dict[str, Any]:
 
 _BADGE = {
     KNOWN_FLAKY: ("RED HERRING", "green"),
+    PROBABLY_FLAKY: ("PROBABLY FLAKY", "yellow"),
     INFRASTRUCTURE: ("RED HERRING", "green"),
     ALREADY_FAILING: ("NOT THIS CHANGE", "green"),
     LOOKS_REAL: ("LOOKS REAL", "red"),
@@ -303,11 +323,14 @@ def summary_sentence(e: Explanation) -> str:
     if rec == NOTHING:
         return "Nothing failed in this attempt."
     if rec == RERUN:
-        return (
-            "Every failure here is a known flake, an infrastructure problem, or already failing on "
+        text = (
+            "Every failure here is a flake, an infrastructure problem, or already failing on "
             f"{e.main_branch or 'the default branch'}. Re-running is reasonable: "
             f"gh run rerun {e.run['id']} --failed --repo {e.repo}"
         )
+        if any(f.verdict == PROBABLY_FLAKY for f in e.findings):
+            text += ". If a test fails again, it's probably real: ask redherring again"
+        return text
     if rec == INVESTIGATE:
         n = len(e.real)
         return f"{n} failure{'s' if n != 1 else ''} look{'s' if n == 1 else ''} real. Look at {'it' if n == 1 else 'them'} before re-running."
@@ -322,7 +345,7 @@ def print_why(e: Explanation, console: Console) -> None:
             style="bold",
         )
     )
-    console.print(f"  {run.get('html_url')}", style="dim")
+    console.print(Text(f"  {run.get('html_url')}", style="dim"))
     if e.history is not None:
         console.print(
             f"  checked against {len(e.history.recovered_runs)} re-run-to-green runs of this workflow "
@@ -341,8 +364,10 @@ def print_why(e: Explanation, console: Console) -> None:
         head.append(f.test_id or f"job: {f.job_name}", style="bold")
         console.print(head)
         if f.test_id:
-            console.print(f"    in {f.job_name}", style="dim")
-        console.print(f"    {f.detail}")
+            console.print(Text(f"    in {f.job_name}", style="dim"))
+        console.print(Text(f"    {f.detail}"))
+        if f.evidence:
+            console.print(Text(f"    log: {f.evidence}", style="dim"))
     console.print()
     color = {RERUN: "green", INVESTIGATE: "red"}.get(e.recommendation, "yellow")
     console.print(Text(summary_sentence(e), style=f"bold {color}"))
@@ -350,19 +375,23 @@ def print_why(e: Explanation, console: Console) -> None:
 
 def why_markdown(e: Explanation) -> str:
     run = e.run
-    out = [f"### redherring: {run.get('name')} #{run.get('run_number')} (attempt {e.attempt})", ""]
+    title = f"{run.get('name')} #{run.get('run_number')} (attempt {e.attempt})"
+    out = [f"### redherring: {_md_text(title)}", ""]
     icon = {RERUN: "✅", INVESTIGATE: "❌"}.get(e.recommendation, "⚠️")
-    out += [f"{icon} **{summary_sentence(e)}**", ""]
+    out += [f"{icon} **{_md_text(summary_sentence(e))}**", ""]
     if e.findings:
         out += ["| verdict | failure | why |", "|---|---|---|"]
         for f in e.findings:
             label, _ = _BADGE[f.verdict]
             what = (
-                f"`{_md_cell(f.test_id)}`<br><sub>{_md_cell(f.job_name)}</sub>"
+                f"{_md_code(f.test_id)}<br><sub>{_md_code(f.job_name)}</sub>"
                 if f.test_id
-                else _md_cell(f.job_name)
+                else _md_code(f.job_name)
             )
-            out.append(f"| {label} | {what} | {_md_cell(f.detail)} ([log]({f.job_url})) |")
+            why = _md_text(f.detail)
+            if f.evidence:
+                why += f"<br>{_md_code(f.evidence)}"
+            out.append(f"| {label} | {what} | {why} ([log]({f.job_url})) |")
         out.append("")
     out.append(
         f"<sub>redherring {__version__} · compared with the last {e.days} days of this workflow</sub>"
@@ -389,6 +418,7 @@ def why_json(e: Explanation) -> dict[str, Any]:
                 "job": f.job_name,
                 "job_url": f.job_url,
                 "detail": f.detail,
+                "evidence": f.evidence or None,
                 "history": {
                     "times": f.history.times,
                     "commits": f.history.commits,
