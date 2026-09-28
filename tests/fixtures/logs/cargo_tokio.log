@@ -1,0 +1,18 @@
+2026-09-22T07:47:06.6125362Z test conn::http2_detect_conn_eof ... ok
+2026-09-22T07:47:07.4164828Z test conn::http2_connect_detect_close ... FAILED
+2026-09-22T07:47:08.5506719Z test conn::http2_keep_alive_closes_open_streams ... ok
+2026-09-22T07:47:08.5529909Z test conn::http2_responds_before_consuming_request_body_no_trailers ... ok
+2026-09-22T07:47:08.5549718Z test conn::http2_responds_before_consuming_request_body_with_trailers ... ok
+2026-09-22T07:47:11.4313612Z 
+2026-09-22T07:47:11.4313767Z failures:
+2026-09-22T07:47:11.4314148Z 
+2026-09-22T07:47:11.4314564Z ---- conn::http2_connect_detect_close stdout ----
+2026-09-22T07:47:11.4314945Z 
+2026-09-22T07:47:11.4345701Z 
+2026-09-22T07:47:11.4346012Z failures:
+2026-09-22T07:47:11.4346221Z     conn::http2_connect_detect_close
+2026-09-22T07:47:11.4346404Z 
+2026-09-22T07:47:11.4346659Z test result: FAILED. 65 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.27s
+2026-09-22T07:47:11.4347021Z 
+2026-09-22T07:47:11.4417823Z [1m[91merror[0m: test failed, to rerun pass `--test client`
+2026-09-22T07:47:11.4560531Z ##[error]Process completed with exit code 101.

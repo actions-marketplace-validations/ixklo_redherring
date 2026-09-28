@@ -1,0 +1,21 @@
+2026-09-27T18:36:23.5318518Z ok  	github.com/grafana/grafana/pkg/tests/apis/dashboard	44.258s
+2026-09-27T18:36:23.5319014Z --- FAIL: TestIntegrationProvisioning_SettingsExtraResources (0.37s)
+2026-09-27T18:36:23.5320563Z     testinfra.go:81: Using test database type sqlite3 host  port  user  name  path /home/ubuntu/.cache/grafana-test/grafana-test-3346601737.db
+2026-09-27T18:36:23.5321551Z     testinfra.go:81: 
+2026-09-27T18:36:23.5347276Z         	Test:       	TestIntegrationProvisioning_SettingsExtraResources
+2026-09-27T18:36:23.5348110Z --- FAIL: TestIntegrationProvisioning_StatsAuthorization (0.01s)
+2026-09-27T18:36:23.5351091Z     helper_test.go:21: CleanupAllResources(connections): deleteAndWait: initial list: connections.provisioning.grafana.app is forbidden: User "" cannot list resource "connections" in API group "provisioning.grafana.app" in the namespace "default": connections.provisioning.grafana.app is forbidden: admin role is required
+2026-09-27T18:36:23.5353360Z --- FAIL: TestIntegrationProvisioning_Stats (0.00s)
+2026-09-27T18:36:23.5356101Z     helper_test.go:21: CleanupAllResources(connections): deleteAndWait: initial list: connections.provisioning.grafana.app is forbidden: User "" cannot list resource "connections" in API group "provisioning.grafana.app" in the namespace "default": connections.provisioning.grafana.app is forbidden: admin role is required
+2026-09-27T18:36:23.5358607Z --- FAIL: TestIntegrationProvisioning_RepositoryStatusPatch_ValidatesBundledSpecChange (0.00s)
+2026-09-27T18:36:23.5361690Z     helper_test.go:21: CleanupAllResources(connections): deleteAndWait: initial list: connections.provisioning.grafana.app is forbidden: User "" cannot list resource "connections" in API group "provisioning.grafana.app" in the namespace "default": connections.provisioning.grafana.app is forbidden: admin role is required
+2026-09-27T18:36:23.5363967Z --- FAIL: TestIntegrationProvisioning_ConnectionStatusPatch_ValidatesBundledSpecChange (0.00s)
+2026-09-27T18:36:23.5367007Z     helper_test.go:21: CleanupAllResources(connections): deleteAndWait: initial list: connections.provisioning.grafana.app is forbidden: User "" cannot list resource "connections" in API group "provisioning.grafana.app" in the namespace "default": connections.provisioning.grafana.app is forbidden: admin role is required
+2026-09-27T18:36:23.5369659Z --- FAIL: TestIntegrationProvisioning_FullSync_MissingFolderMetadata_FlagDisabled (0.07s)
+2026-09-27T18:36:23.5372754Z     helper_test.go:21: CleanupAllResources(connections): deleteAndWait: initial list: connections.provisioning.grafana.app is forbidden: User "" cannot list resource "connections" in API group "provisioning.grafana.app" in the namespace "default": connections.provisioning.grafana.app is forbidden: admin role is required
+2026-09-27T18:36:23.5374809Z FAIL
+2026-09-27T18:36:23.5375382Z FAIL	github.com/grafana/grafana/pkg/tests/apis/provisioning	45.456s
+2026-09-27T18:36:23.5376263Z ok  	github.com/grafana/grafana/pkg/tests/apis/provisioning/maxfilesize	4.776s
+2026-09-27T18:36:23.5377103Z FAIL
+2026-09-27T18:36:24.7237568Z ##[error]Process completed with exit code 1.
+2026-09-27T18:36:24.7326391Z Post job cleanup.

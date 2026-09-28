@@ -1,0 +1,13 @@
+2026-09-27T15:42:46.9894620Z INTERNALERROR>   File "/opt/hostedtoolcache/Python/3.10.21/x64/lib/python3.10/subprocess.py", line 526, in run
+2026-09-27T15:42:46.9895394Z INTERNALERROR>     raise CalledProcessError(retcode, process.args,
+2026-09-27T15:42:46.9896475Z INTERNALERROR> subprocess.CalledProcessError: Command '['docker', 'compose', '-f', 'docker-compose.yaml', '-f', 'ts.yml', 'up', '--wait']' returned non-zero exit status 1.
+2026-09-27T15:42:47.2733020Z ##[endgroup]
+2026-09-27T15:42:47.2774162Z 
+2026-09-27T15:42:47.3107727Z ##[error]Process completed with exit code 3.
+2026-09-27T15:42:47.3162396Z ##[group]Run cd ./airflow-e2e-tests && zip -r logs.zip logs
+2026-09-27T15:42:47.3579339Z zip error: Nothing to do! (try: zip -r logs.zip . -i logs)
+2026-09-27T15:42:47.3584107Z ##[error]Process completed with exit code 12.
+2026-09-27T15:42:47.3626395Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-27T15:42:47.3634756Z ##[endgroup]
+2026-09-27T15:42:47.4921049Z ##[error]No files were found with the provided path: ./airflow-e2e-tests/logs.zip. No artifacts will be uploaded.
+2026-09-27T15:42:47.5030739Z Post job cleanup.

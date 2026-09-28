@@ -1,0 +1,10 @@
+2026-09-27T22:10:01.2939419Z #24 [stage-4  2/10] RUN apk add --no-cache             bash             python3             py3-pip             py3-yaml             gcompat             libgcc             libstdc++             libuuid             ca-certificates             procps             curl             bind-tools             openssl             coreutils
+2026-09-27T22:10:30.3934133Z #24 60.46 WARNING: fetching https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/APKINDEX.tar.gz: TLS: unspecified error
+2026-09-27T22:10:30.5933329Z #24 60.71 ERROR: unable to select packages:
+2026-09-27T22:10:30.5934591Z #24 60.71   bash (no such package):
+2026-09-27T22:10:30.5935822Z #24 60.71     required by: world[bash]
+2026-09-27T22:10:30.7954471Z > Get more help at https://help.gradle.org.
+2026-09-27T22:10:30.7955069Z 
+2026-09-27T22:10:30.7955463Z BUILD FAILED in 1m 41s
+2026-09-27T22:10:30.9932242Z 
+2026-09-27T22:10:30.9932903Z Publishing Build Scan to Develocity...

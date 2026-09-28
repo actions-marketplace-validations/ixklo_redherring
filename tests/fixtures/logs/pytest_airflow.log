@@ -1,0 +1,16 @@
+2026-09-26T10:12:02.8209646Z Progress: Core                          [...][0;0m[0;0m
+2026-09-26T10:12:02.8211257Z                                         [31m===================================================== [31m[1m1 failed[0m, [32m2816 passed[0m, [33m26 skipped[0m, [33m833 deselected[0m, [...][0;0m[0;0m
+2026-09-26T10:12:02.8213076Z Progress: Serialization                 [33m======================================================================= [32m62 passed[0m, [33m[1m1108 deselected[0m, [33m[1m1 [...][0;0m[0;0m
+2026-09-26T10:12:02.8214773Z [92m───────────────────────────────────────────────────────────────────────────────────────── [0mTime passed: [1;92m00:22:03[0m[92m ──────────────────────────────────────────────────────────────────────────────────────────[0m
+2026-09-26T10:12:15.8950161Z Warnings saved into [33m/files/warnings-core-postgres.txt[0m file.
+2026-09-26T10:12:15.8951786Z [36m[1m======================================================================================== short test summary info =========================================================================================[0m
+2026-09-26T10:12:15.8954958Z [31mFAILED[0m airflow-core/tests/unit/jobs/test_triggerer_job.py::[1mtest_trigger_log[trigger1-1-0][0m - assert '0 triggers currently running' in "2026-09-26T09:53:43.759595Z [info     ] Triggerer's async thread was blocked for 300.00 seconds, exceeding the config...get more information on overrunning coroutines. [airflow.jobs.triggerer_job_runner] loc=triggerer_job_runner.py:1101\n"
+2026-09-26T10:12:15.8958025Z [31m===================================================== [31m[1m1 failed[0m, [32m2816 passed[0m, [33m26 skipped[0m, [33m833 deselected[0m, [33m1 xfailed[0m, [33m1 warning[0m[31m in 1297.90s (0:21:37)[0m[31m ======================================================[0m
+2026-09-26T10:12:15.8959229Z 
+2026-09-26T10:12:15.8959486Z Dumping logs on error
+2026-09-26T10:12:15.9146511Z Warnings saved into [33m/files/warnings-core-postgres.txt[0m file.
+2026-09-26T10:12:15.9147285Z [36m[1m======================================================================================== short test summary info =========================================================================================[0m
+2026-09-26T10:12:15.9149406Z [31mFAILED[0m airflow-core/tests/unit/jobs/test_triggerer_job.py::[1mtest_trigger_log[trigger1-1-0][0m - assert '0 triggers currently running' in "2026-09-26T09:53:43.759595Z [info     ] Triggerer's async thread was blocked for 300.00 seconds, exceeding the config...get more information on overrunning coroutines. [airflow.jobs.triggerer_job_runner] loc=triggerer_job_runner.py:1101\n"
+2026-09-26T10:12:15.9151885Z [31m===================================================== [31m[1m1 failed[0m, [32m2816 passed[0m, [33m26 skipped[0m, [33m833 deselected[0m, [33m1 xfailed[0m, [33m1 warning[0m[31m in 1297.90s (0:21:37)[0m[31m ======================================================[0m
+2026-09-26T10:12:15.9152782Z 
+2026-09-26T10:12:15.9152913Z Dumping logs on error

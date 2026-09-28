@@ -1,0 +1,7 @@
+2026-09-25T15:57:03.7776188Z 2026-09-25 15:57:03,582 ERROR [testinfo] (main)     FAILED - org.keycloak.tests.admin.concurrency.ConcurrentLoginTest / concurrentLoginSingleUserSingleClient
+2026-09-25T15:57:03.7777377Z [ERROR] Tests run: 5, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 15.29 s <<< FAILURE! -- in org.keycloak.tests.admin.concurrency.ConcurrentLoginTest
+2026-09-25T15:57:03.7778445Z [ERROR] org.keycloak.tests.suites.Base1TestSuite.concurrentLoginSingleUserSingleClient -- Time elapsed: 2.670 s <<< ERROR!
+2026-09-25T15:57:03.7779214Z java.lang.RuntimeException: There were failures in threads. Failures count: 1
+2026-09-25T16:14:29.1514157Z [INFO] 
+2026-09-25T16:14:29.1517129Z [ERROR] Tests run: 1130, Failures: 0, Errors: 1, Skipped: 1
+2026-09-25T16:14:29.1518658Z [INFO] 

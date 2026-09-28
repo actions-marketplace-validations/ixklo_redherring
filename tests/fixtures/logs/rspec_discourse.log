@@ -1,0 +1,12 @@
+2026-09-25T16:44:30.4674380Z 
+2026-09-25T16:44:30.4674456Z Failed examples:
+2026-09-25T16:44:30.4674562Z 
+2026-09-25T16:44:30.4675066Z [31mrspec ./spec/system/scroll_manager_service_spec.rb:46[0m [36m# Ember route-scroll-manager service scrolls to the top when navigating from a topic to the homepage[0m
+2026-09-25T16:44:30.4690767Z 
+2026-09-25T16:44:30.4951026Z Retrying failed examples and logging flaky tests...
+2026-09-25T16:44:44.0674897Z 
+2026-09-25T16:44:44.0674965Z Failed examples:
+2026-09-25T16:44:44.0675064Z 
+2026-09-25T16:44:44.0675539Z [31mrspec ./spec/system/scroll_manager_service_spec.rb:46[0m [36m# Ember route-scroll-manager service scrolls to the top when navigating from a topic to the homepage[0m
+2026-09-25T16:44:44.0675983Z 
+2026-09-25T16:44:44.0676061Z Randomized with seed 49355

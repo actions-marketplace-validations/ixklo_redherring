@@ -1,0 +1,24 @@
+2026-09-25T20:32:28.9493892Z [33;1m        SLOW[0m [> 10.000s] (─────────) [35;1muv-client::it[0m [36mssl_certs[0m[36m::[0m[34;1mtest_system_certs_with_ssl_cert_dir_replaces_system_roots[0m
+2026-09-25T20:32:29.0509814Z [31;1m        FAIL[0m [  10.138s] (1226/1239) [35;1muv-client::it[0m [36mssl_certs[0m[36m::[0m[34;1mtest_system_certs_with_ssl_cert_dir_replaces_system_roots[0m
+2026-09-25T20:32:29.0510951Z [31;1m [0m [31;1mstdout[0m [31;1m───[0m
+2026-09-25T20:32:29.0511096Z 
+2026-09-25T20:32:29.0511192Z     running 1 test
+2026-09-25T20:32:29.0511413Z     test ssl_certs::test_system_certs_with_ssl_cert_dir_replaces_system_roots ... FAILED
+2026-09-25T20:32:29.0511645Z 
+2026-09-25T20:32:29.0511714Z     failures:
+2026-09-25T20:32:29.0513893Z 
+2026-09-25T20:32:29.0514056Z     [0m[31;1mthread 'main' (2996) panicked at crates\uv-client\tests\it\ssl_certs.rs:483:9:[0m
+2026-09-25T20:32:29.0514530Z     [31;1mexpected fatal reqwest error without retries, got: Request failed after 1 retries[0m
+2026-09-25T20:32:29.0514736Z 
+2026-09-25T20:33:20.7102219Z [33;1m        SLOW[0m [  58.217s] (1227/1239) [35;1muv::python[0m [36mpython_install[0m[36m::[0m[34;1mpython_install_compile_bytecode_graalpy[0m
+2026-09-25T20:33:20.7102660Z [31;1m        FAIL[0m [  10.138s] (1226/1239) [35;1muv-client::it[0m [36mssl_certs[0m[36m::[0m[34;1mtest_system_certs_with_ssl_cert_dir_replaces_system_roots[0m
+2026-09-25T20:33:20.7103013Z [31;1m [0m [31;1mstdout[0m [31;1m───[0m
+2026-09-25T20:33:20.7103105Z 
+2026-09-25T20:33:20.7103148Z     running 1 test
+2026-09-25T20:33:20.7103315Z     test ssl_certs::test_system_certs_with_ssl_cert_dir_replaces_system_roots ... FAILED
+2026-09-25T20:33:20.7103465Z 
+2026-09-25T20:33:20.7103506Z     failures:
+2026-09-25T20:33:20.7104901Z 
+2026-09-25T20:33:20.7105050Z     [0m[31;1mthread 'main' (2996) panicked at crates\uv-client\tests\it\ssl_certs.rs:483:9:[0m
+2026-09-25T20:33:20.7105352Z     [31;1mexpected fatal reqwest error without retries, got: Request failed after 1 retries[0m
+2026-09-25T20:33:20.7105502Z 

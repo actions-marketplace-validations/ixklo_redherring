@@ -1,0 +1,24 @@
+2026-09-26T08:57:43.7332335Z time=2026-09-26T08:57:38.327Z level=INFO source=head.go:1749 msg="Head GC completed" caller=truncateMemory duration=16.401192ms
+2026-09-26T08:57:43.7332881Z panic: test timed out after 10m0s
+2026-09-26T08:57:43.7333129Z 	running tests:
+2026-09-26T08:57:43.7333571Z 		TestBlockReloadInterval/extremely_small_interval (4s)
+2026-09-26T08:57:43.7334095Z 		TestBlockReloadInterval/one_second_interval (4s)
+2026-09-26T08:57:43.7334318Z 
+2026-09-26T08:57:43.7334403Z goroutine 81060 [running]:
+2026-09-26T08:57:43.7334629Z testing.(*M).startAlarm.func1()
+2026-09-26T08:57:43.7390395Z 	/usr/local/go/src/testing/testing.go:2258 +0xb13
+2026-09-26T08:57:43.7390734Z FAIL	github.com/prometheus/prometheus/tsdb	600.420s
+2026-09-26T08:57:43.7391122Z ok  	github.com/prometheus/prometheus/tsdb/agent	360.318s
+2026-09-26T08:57:43.7391518Z ok  	github.com/prometheus/prometheus/tsdb/chunkenc	2.773s
+2026-09-26T08:57:43.7391904Z ok  	github.com/prometheus/prometheus/tsdb/chunks	41.830s
+2026-09-26T08:57:43.7392341Z ?   	github.com/prometheus/prometheus/tsdb/compression	[no test files]
+2026-09-26T08:57:43.7392824Z ?   	github.com/prometheus/prometheus/tsdb/encoding	[no test files]
+2026-09-26T08:57:43.7393251Z ok  	github.com/prometheus/prometheus/tsdb/fileutil	1.045s
+2026-09-26T08:57:43.7410244Z ?   	github.com/prometheus/prometheus/web/ui	[no test files]
+2026-09-26T08:57:43.7410571Z FAIL
+2026-09-26T08:57:45.1945789Z make: *** [Makefile.common:182: common-test] Error 1
+2026-09-26T08:57:45.2037009Z ##[error]Process completed with exit code 2.
+2026-09-26T08:57:45.2230719Z Post job cleanup.
+2026-09-26T08:57:45.2236343Z ##[start-action display=Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9;id=__0ab747e8-3e55-428a-8dc6-faaa82cd332f.__actions_cache_2]
+2026-09-26T08:57:45.2238795Z ##[end-action id=__0ab747e8-3e55-428a-8dc6-faaa82cd332f.__actions_cache_2;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-26T08:57:45.2240973Z ##[start-action display=Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9;id=__0ab747e8-3e55-428a-8dc6-faaa82cd332f.__actions_cache]

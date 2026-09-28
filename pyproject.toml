@@ -1,0 +1,59 @@
+[project]
+name = "redherring"
+version = "0.1.0"
+description = "Find the CI failures that weren't your fault: flaky tests and infrastructure hiccups, mined from the GitHub Actions history you already have."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "ixklo" }]
+keywords = ["flaky-tests", "ci", "github-actions", "testing", "devtools", "coding-agents"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "httpx>=0.27",
+    "rich>=13.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/ixklo/redherring"
+Issues = "https://github.com/ixklo/redherring/issues"
+
+[project.scripts]
+redherring = "redherring.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "LICENSE", "CHANGELOG.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+# The formatter owns line length; long regexes and messages stay on one line.
+ignore = ["E501"]

@@ -1,0 +1,14 @@
+2026-09-25T01:21:41.7438558Z INFO    -  Setting version prefix: 'Documentation for development version: [275164a](https://github.com/pydantic/pydantic/commit/275164a0d889f1d164b40a3780cb7eef61d6c71c)'
+2026-09-25T01:22:37.3878230Z ERROR   -  Error building page 'index.md': HTTPSConnectionPool(host='fonts.gstatic.com', port=443): Max retries exceeded with url: /s/roboto/v51/KFOMCnqEu92Fr1ME7kSn66aGLdTylR4MQXC89YmC2DPNWubEbGmTggvWl0Qn.ttf (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
+2026-09-25T01:22:37.3881290Z Traceback (most recent call last):
+2026-09-25T01:22:37.3913935Z     raise new_e
+2026-09-25T01:22:37.3914602Z urllib3.exceptions.SSLError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)
+2026-09-25T01:22:37.3915386Z 
+2026-09-25T01:22:37.3922835Z     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-25T01:22:37.3924347Z urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='fonts.gstatic.com', port=443): Max retries exceeded with url: /s/roboto/v51/KFOMCnqEu92Fr1ME7kSn66aGLdTylR4MQXC89YmC2DPNWubEbGmTggvWl0Qn.ttf (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
+2026-09-25T01:22:37.3926603Z 
+2026-09-25T01:22:37.4630552Z   File "/home/runner/work/pydantic/pydantic/.venv/lib/python3.12/site-packages/requests/adapters.py", line 676, in send
+2026-09-25T01:22:37.4630676Z     raise SSLError(e, request=request)
+2026-09-25T01:22:37.4631891Z requests.exceptions.SSLError: HTTPSConnectionPool(host='fonts.gstatic.com', port=443): Max retries exceeded with url: /s/roboto/v51/KFOMCnqEu92Fr1ME7kSn66aGLdTylR4MQXC89YmC2DPNWubEbGmTggvWl0Qn.ttf (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
+2026-09-25T01:22:37.8858069Z ##[error]Process completed with exit code 1.
+2026-09-25T01:22:37.9012716Z Post job cleanup.

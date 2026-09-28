@@ -1,0 +1,10 @@
+2026-09-25T16:11:49.6232454Z [32m[39m[32mok 3610 #2 [42 ms] - Integration | Component | UserMenu | MenuItem | with reviewable items: the item's label is a placeholder that indicates deleted user if flagger_username is absent[39m
+2026-09-25T16:11:49.6774721Z [32m[39m[32mok 3611 #1 [78 ms] - Integration | Component | SiteSetting: Shows update status for default_categories_* site settings[39m
+2026-09-25T16:11:49.6839632Z [32m[39m[31mnot ok 3612 Chrome 154.0 - [undefined ms] - Global error: Uncaught TypeError: Failed to execute 'elementsFromPoint' on 'Document': The provided double value is non-finite. at http://localhost:7357/assets/js/chunk-dabpt4tm.digested.js, line 29406[39m
+2026-09-25T16:11:49.6841186Z [31m While executing test: Browser Id 4 - Integration | Component | UppyImageUploader: when dragging image[39m
+2026-09-25T16:11:49.6844116Z [31m[39m[Browser 4] [error] Uncaught TypeError: Failed to execute 'elementsFromPoint' on 'Document': The provided double value is non-finite. at http://localhost:7357/assets/js/chunk-dabpt4tm.digested.js:29406
+2026-09-25T16:12:45.6081674Z 
+2026-09-25T16:12:45.6082075Z Testem finished with non-zero exit code. Tests failed.
+2026-09-25T16:12:45.6083097Z [31mnot ok 3612 Chrome 154.0 - [undefined ms] - Global error: Uncaught TypeError: Failed to execute 'elementsFromPoint' on 'Document': The provided double value is non-finite. at http://localhost:7357/assets/js/chunk-dabpt4tm.digested.js, line 29406[39m
+2026-09-25T16:12:45.6083905Z 
+2026-09-25T16:12:45.6084215Z [31m While executing test: Browser Id 4 - Integration | Component | UppyImageUploader: when dragging image[39m
