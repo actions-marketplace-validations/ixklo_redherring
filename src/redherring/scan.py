@@ -217,6 +217,10 @@ _SUMMARY_OUTPUT = re.compile(
     r"\[required to succeed\]|Some of the required to succeed jobs failed|\[allowed to fail\]"
     r"|^\s*- [\w./ -]+: (?:failure|failed|cancelled)\s*$|^Required checks failed"
     r"|^Upstream job results|see the jobs above for details"
+    r"|Some check runs have failed or have not completed|were required but finished with result: failure"
+    r"|^\s*\"[\w.-]+\": \"failure\",?\s*$"
+    # A step whose whole command is `exit 1` exists only to fail when something it waits on failed.
+    r"|^##\[group\]Run exit 1\s*$"
 )
 
 

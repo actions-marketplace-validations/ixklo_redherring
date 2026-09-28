@@ -34,6 +34,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"has exceeded the maximum execution time of|The job has exceeded the maximum execution"
             r"|Some tasks were terminated on timeout|Final attempt failed\. Timeout of \d+ms hit"
             r"|Waiting for flows to complete has timed out"
+            r"|The action '.*' has timed out after \d+ minutes|Timed out after \d+ minutes waiting for"
         ),
     ),
     (
@@ -53,6 +54,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             # 0xC0000142 STATUS_DLL_INIT_FAILED: Windows couldn't start the process at all.
             r"exited \(-1073741502\)|exit code -1073741502|0xC0000142|3221225794"
             r"|bad interpreter: Text file busy|Failed to start Firecracker VM"
+            r"|xcode-select: error: invalid developer directory|WSL\d? import failed|WSL\d? is not supported"
         ),
     ),
     (
@@ -92,6 +94,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|CondaHTTPError|HTTP \d{3} (?:Forbidden|Too Many Requests|Service Unavailable) for url"
             r"|could not download file from|error downloading file|failed to fetch anonymous token"
             r"|error NU1301: .*(?:40[39]|5\d\d)|HTTP status server error \(5\d\d"
+            r"|Unable to find installation candidates for"
         ),
     ),
     (

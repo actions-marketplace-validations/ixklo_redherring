@@ -573,3 +573,37 @@ def test_audit2_formats(label, text, expected):
 def test_audit2_signatures(line, category):
     cause = classify([line, "##[error]Process completed with exit code 1."])
     assert cause is not None and cause.category == category
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Complete job name: thank you, next\n##[group]Run exit 1\nexit 1\n##[endgroup]\n##[error]Process completed with exit code 1.\n",
+        "Some check runs have failed or have not completed. This check fails.\n##[error]Process completed with exit code 1.\n",
+        '{\n  "grafana-enterprise": "failure",\n  "lint": "success"\n}\n##[error]Process completed with exit code 1.\n',
+        "API tests were required but finished with result: failure\n##[error]Process completed with exit code 1.\n",
+    ],
+)
+def test_more_rollup_shapes(text):
+    kind, *_ = explain_log(text)
+    assert kind == "summary"
+
+
+@pytest.mark.parametrize(
+    "line,category",
+    [
+        (
+            "##[error]The action '🧪 Run smoke tests (Electron)' has timed out after 30 minutes.",
+            "job timeout",
+        ),
+        ("Timed out after 20 minutes waiting for patch check to complete", "job timeout"),
+        (
+            "xcode-select: error: invalid developer directory '/Applications/Xcode.app'",
+            "runner environment",
+        ),
+        ("Unable to find installation candidates for protobuf-py-ext (1.2.3)", "package registry"),
+    ],
+)
+def test_study2_signatures(line, category):
+    cause = classify([line, "##[error]Process completed with exit code 1."])
+    assert cause is not None and cause.category == category
