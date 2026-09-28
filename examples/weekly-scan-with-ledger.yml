@@ -1,0 +1,23 @@
+# A weekly flaky-test report in the job summary, with a ledger that keeps evidence
+# after GitHub deletes old runs (90 days by default from 1 October 2026).
+name: flaky report
+on:
+  schedule: [{ cron: "0 7 * * 1" }]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/cache@v6
+        with:
+          path: flake-ledger.json
+          key: redherring-ledger-${{ github.run_id }}
+          restore-keys: redherring-ledger-
+      - uses: ixklo/redherring@v0.1.0
+        with:
+          command: scan
+          days: "30"
+          ledger: flake-ledger.json

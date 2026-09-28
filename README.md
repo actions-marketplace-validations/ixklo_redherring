@@ -78,6 +78,8 @@ Before changing code because CI failed, run `redherring why <run-url> --format j
 - Never skip, loosen, or delete a test just because it is listed as flaky.
 ```
 
+Or install the ready-made skill: copy [`skills/redherring/`](skills/redherring/SKILL.md) into your agent's skills folder (for Claude Code, `.claude/skills/redherring/`). More setups are in [`examples/`](examples/).
+
 ## GitHub Action
 
 Explain every failed CI run, in its job summary and as a comment on the pull request:
