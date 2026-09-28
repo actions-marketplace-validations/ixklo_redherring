@@ -12,7 +12,7 @@ from rich.table import Table
 from rich.text import Text
 
 from . import __version__
-from .scan import KIND_EXPIRED, KIND_INFRA, KIND_TESTS, ScanResult, TestStat
+from .scan import ScanResult, TestStat
 from .why import (
     ALREADY_FAILING,
     INFRASTRUCTURE,
@@ -406,17 +406,3 @@ def why_json(e: Explanation) -> dict[str, Any]:
 
 def dumps(obj: Any) -> str:
     return json.dumps(obj, indent=2, ensure_ascii=False)
-
-
-__all__ = [
-    "KIND_EXPIRED",
-    "KIND_INFRA",
-    "KIND_TESTS",
-    "dumps",
-    "print_scan",
-    "print_why",
-    "scan_json",
-    "scan_markdown",
-    "why_json",
-    "why_markdown",
-]
