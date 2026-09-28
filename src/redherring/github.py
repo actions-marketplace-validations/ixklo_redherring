@@ -18,6 +18,8 @@ API = "https://api.github.com"
 _SEARCH_CAP = 1000
 _MIN_WINDOW = timedelta(minutes=30)
 _LIST_WORKERS = 4
+# total_count on the runs endpoint never reports more than this.
+_COUNT_CAP = 2500
 
 
 class GitHubError(RuntimeError):
@@ -242,7 +244,13 @@ class GitHub:
             "exclude_pull_requests": "true",
             **(extra or {}),
         }
-        return self.get(self.runs_path(repo, workflow_id), params)["total_count"]
+        total = self.get(self.runs_path(repo, workflow_id), params)["total_count"]
+        # total_count stops at 2500; count the halves separately when it might be capped.
+        if total >= _COUNT_CAP and until - since > _MIN_WINDOW:
+            mid = since + (until - since) / 2
+            kw = {"status": status, "workflow_id": workflow_id, "extra": extra}
+            return self.count_runs(repo, since, mid, **kw) + self.count_runs(repo, mid, until, **kw)
+        return total
 
     def workflows(self, repo: str) -> list[dict]:
         return list(self.paginate(f"/repos/{repo}/actions/workflows", "workflows"))

@@ -4,6 +4,7 @@ import json
 import time
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import pytest
 
 from redherring import cli
@@ -275,3 +276,22 @@ class _Frozen(datetime):
     @classmethod
     def now(cls, tz=None):
         return UNTIL
+
+
+def test_failed_count_is_split_when_total_count_is_capped():
+    fake = Fake()
+    history(fake)
+    real = fake._list_runs
+
+    def capped(q, workflow_id):
+        resp = real(q, workflow_id)
+        data = json.loads(resp.content)
+        lo, hi = q["created"].split("..")
+        # GitHub never reports more than 2500; pretend any window over a day is capped.
+        if (at(hi.rstrip("Z")) - at(lo.rstrip("Z"))).total_seconds() > 86400:
+            data["total_count"] = 2500
+        return httpx.Response(200, json=data)
+
+    fake._list_runs = capped
+    gh = GitHub("t", transport=fake.transport())
+    assert gh.count_runs(REPO, at("2026-08-28T00:00:00"), UNTIL, status="failure") == 1
