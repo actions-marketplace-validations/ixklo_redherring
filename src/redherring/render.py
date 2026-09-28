@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
-from statistics import median
+from statistics import median, quantiles
 from typing import Any
 
 from rich.console import Console
@@ -76,12 +76,16 @@ def headline(r: ScanResult) -> list[str]:
             "of the same commit: red herrings, not broken code."
         )
     if r.herring_jobs:
-        red = sum(r.red_seconds)
-        med = median(r.red_seconds) if r.red_seconds else 0
-        lines.append(
-            f"The failed jobs burned {hours(r.runner_seconds)} of runner time, and commits sat red for "
-            f"{hours(red)} in total waiting for a re-run (median {hours(med)} each)."
-        )
+        line = f"The failed jobs burned {hours(r.runner_seconds)} of runner time."
+        if r.red_seconds:
+            line += (
+                f" A red herring kept its commit red for {hours(median(r.red_seconds))} (median)"
+            )
+            if len(r.red_seconds) >= 10:
+                slow = quantiles(r.red_seconds, n=10)[-1]
+                line += f"; 1 in 10 stayed red longer than {hours(slow)}"
+            line += "."
+        lines.append(line)
     return lines
 
 
@@ -222,7 +226,12 @@ def scan_json(r: ScanResult) -> dict[str, Any]:
             "recovered_by_rerun": r.herring_runs,
         },
         "runner_seconds_lost": round(r.runner_seconds),
-        "red_seconds": {"total": round(sum(r.red_seconds)), "count": len(r.red_seconds)},
+        "red_seconds": {
+            "count": len(r.red_seconds),
+            "median": round(median(r.red_seconds)) if r.red_seconds else None,
+            "p90": round(quantiles(r.red_seconds, n=10)[-1]) if len(r.red_seconds) >= 10 else None,
+            "total": round(sum(r.red_seconds)),
+        },
         "causes": dict(r.cause_counts()),
         "flaky_tests": [
             {

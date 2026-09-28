@@ -8,32 +8,9 @@ Then, when a build fails, `redherring why` tells you (or your coding agent) whic
 
 No server, no signup, nothing to install in CI first. If your repo has Actions history, the first run already has answers.
 
-```text
-$ redherring scan astral-sh/uv --days 7
-redherring · astral-sh/uv
-  821 finished workflow runs in the last 7 days; 110 went red at least once.
-  44 of those (40%) turned green on a plain re-run of the same commit: red herrings, not broken code.
-  The failed jobs burned 3.8 h of runner time, and commits sat red for 7.8 h in total waiting
-  for a re-run (median 9 min each).
+![redherring scan on astral-sh/uv: 2,129 runs in 14 days, 280 went red, 94 of those (34%) turned green on a plain re-run; a table of named flaky tests, several Windows-only; flaky jobs grouped by cause](docs/demo-scan.svg)
 
-Flaky tests: failed, then passed on the same commit
-times │ where     │ last   │ test
-──────┼───────────┼────────┼──────────────────────────────────────────────────────────────────────
-    2 │ linux win │ 2d ago │ uv::tool tool_run::tool_run_verbose_hint
-    2 │ mac win   │ 2d ago │ uv::pip_install pip_install::cyclic_build_dependency
-    2 │ mac win   │ 3d ago │ uv::pip_install pip_install::install_wheel_cache_incompatible_with_older_uv
-    2 │ win       │ 4d ago │ uv::python python_install::python_install_compile_bytecode_pypy
-  …
-
-Flaky jobs with no test named
-times │ cause                │ job
-──────┼──────────────────────┼──────────────────────────────────────
-   12 │ service startup (12) │ test-integration / windows nanoserver
-    4 │ network (4)          │ build-docker / build uv
-    4 │ unknown (3), AI provider │ review / security review
-```
-
-*(Real output from a public repo, September 2026. The "AI provider" row is an AI code-review job failing with "Selected model is at capacity".)*
+*Real output for a public repo, 28 September 2026. The "AI provider" cause is an AI code-review job failing with "Selected model is at capacity".*
 
 ## Install
 
@@ -69,6 +46,8 @@ You get:
 redherring why https://github.com/owner/repo/actions/runs/123456789
 redherring why 123456789 --repo owner/repo --format json
 ```
+
+![redherring why on a failed uv PR run: one test is a known flake (failed then passed on re-runs twice in 14 days), the other looks real](docs/demo-why.svg)
 
 For every failure in the run, one verdict:
 
