@@ -305,3 +305,12 @@ def test_rerun_after_a_cancelled_attempt_never_went_red():
     r = make(fake).scan(REPO, days=30, until=UNTIL)
     assert len(r.recovered_runs) == 5  # 107 was re-run...
     assert r.runs_went_red == 5  # ...but never went red
+
+
+def test_rate_limit_with_a_stale_reset_backs_off_instead_of_spinning():
+    stale = {"x-ratelimit-remaining": "0", "x-ratelimit-reset": str(int(time.time()) - 30)}
+    fake = Fake(interrupts=[(403, stale), (403, stale), (403, stale)])
+    sleeps: list[float] = []
+    gh = make(fake, sleeps=sleeps).gh
+    assert gh.repo(REPO)["default_branch"] == "main"
+    assert sleeps == [5.0, 10.0, 15.0]

@@ -20,6 +20,8 @@ _MIN_WINDOW = timedelta(minutes=30)
 _LIST_WORKERS = 4
 # total_count on the runs endpoint never reports more than this.
 _COUNT_CAP = 2500
+# Enough to sit out a few hourly rate-limit windows during a long scan.
+_MAX_LIMIT_WAITS = 50
 
 
 class GitHubError(RuntimeError):
@@ -98,30 +100,40 @@ class GitHub:
         method: str = "GET",
         body: Any = None,
     ) -> httpx.Response:
-        for attempt in range(6):
+        attempt = 0
+        limited = 0
+        while True:
             try:
                 resp = self._http.request(method, path, params=params, json=body)
             except httpx.TransportError as e:
                 if attempt == 5:
                     raise GitHubError(f"network error talking to GitHub: {e}") from e
                 self._sleep(2**attempt)
+                attempt += 1
                 continue
             self.requests += 1
-            if resp.status_code in (403, 429) and self._rate_limited(resp):
+            # Rate limits are waited out, not counted as failures: a big scan can span hours.
+            if (
+                resp.status_code in (403, 429)
+                and limited < _MAX_LIMIT_WAITS
+                and self._rate_limited(resp, limited)
+            ):
+                limited += 1
                 continue
             # Only reads are retried on server errors: a retried write could post twice.
             if resp.status_code >= 500 and attempt < 5 and method == "GET":
                 self._sleep(2**attempt)
+                attempt += 1
                 continue
             return resp
-        return resp
 
-    def _rate_limited(self, resp: httpx.Response) -> bool:
+    def _rate_limited(self, resp: httpx.Response, previous: int = 0) -> bool:
         """Sleep through a rate limit and return True, or return False if this isn't one."""
         body = resp.text.lower()
         if resp.headers.get("x-ratelimit-remaining") == "0":
             reset = int(resp.headers.get("x-ratelimit-reset", "0"))
-            wait = max(1.0, reset - time.time() + 1)
+            # Clocks differ and the reset can lag: never spin, back off if it keeps refusing.
+            wait = max(5.0 * (previous + 1), reset - time.time() + 2)
             self._on_wait("GitHub API rate limit reached", wait)
             self._sleep(wait)
             return True
