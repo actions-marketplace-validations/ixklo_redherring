@@ -13,6 +13,13 @@ A **red herring** here is a workflow run that went red and then turned green whe
 - **47 tests failed repeatedly on Windows and nowhere else.**
 - One AI-agent project, openclaw/openclaw, ran 676,065 workflow runs in the two weeks, more than half of the whole study.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="share-dark.svg">
+    <img alt="Bar chart: share of red CI runs that were red herrings for the 20 highest of 69 repos with 50 or more red runs; astral-sh/uv 34%, microsoft/vscode 23%, forem/forem 20%, ollama/ollama 18%, bitcoin/bitcoin 17%, vercel/next.js 15%; median of the 69 is 3%." src="share-light.svg" width="760">
+  </picture>
+</p>
+
 ## Method
 
 - **Sample.** The 10 most-starred repositories per language (Python, TypeScript, JavaScript, Go, Rust, Java, C++, C#, Ruby, PHP, Kotlin, Swift) with at least 10,000 stars, updated since 14 September 2026 and with at least 100 Actions runs in the window, plus 25 hand-picked repos from an earlier field test. 122 were measured; 18 ran out of time (GitHub allows 5,000 API requests an hour, and the busiest repos need thousands). They're listed at the end. The missing ones are mostly the busiest repos, so the totals (runs, runner-hours) undercount; the shares describe the repos that were measured.

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700" role="img" aria-label="Bar chart: the 20 repos with the highest share of red CI runs that were red herrings. Median across 69 repos is 3%.">
+<title>Share of red CI runs that were red herrings, top 20 of 69 repos</title>
+<rect width="900" height="700" rx="12" fill="#fcfcfb"/>
+<text x="28" y="40" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" font-weight="600" fill="#0b0b0b">Share of red CI runs that were red herrings</text>
+<text x="28" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#52514e">Top 20 of the 69 repos with 50+ red runs in 14 days · red herring = passed on a plain re-run of the same commit</text>
+<line x1="250.0" y1="96" x2="250.0" y2="624" stroke="#e1e0d9" stroke-width="1"/>
+<text x="250.0" y="644" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">0%</text>
+<line x1="397.5" y1="96" x2="397.5" y2="624" stroke="#e1e0d9" stroke-width="1"/>
+<text x="397.5" y="644" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">10%</text>
+<line x1="545.0" y1="96" x2="545.0" y2="624" stroke="#e1e0d9" stroke-width="1"/>
+<text x="545.0" y="644" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">20%</text>
+<line x1="692.5" y1="96" x2="692.5" y2="624" stroke="#e1e0d9" stroke-width="1"/>
+<text x="692.5" y="644" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">30%</text>
+<line x1="840.0" y1="96" x2="840.0" y2="624" stroke="#e1e0d9" stroke-width="1"/>
+<text x="840.0" y="644" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">40%</text>
+<path d="M250,109.0 h496.615 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-496.615 z" fill="#2a78d6"><title>astral-sh/uv: 33.9% (94 of 277 red runs)</title></path>
+<text x="240" y="122.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">astral-sh/uv</text>
+<text x="756.615" y="122.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">34%</text>
+<path d="M250,135.0 h337.905 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-337.905 z" fill="#2a78d6"><title>microsoft/vscode: 23.2% (386 of 1665 red runs)</title></path>
+<text x="240" y="148.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">microsoft/vscode</text>
+<text x="597.905" y="148.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">23%</text>
+<path d="M250,161.0 h286.13249999999994 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-286.13249999999994 z" fill="#2a78d6"><title>forem/forem: 19.7% (12 of 61 red runs)</title></path>
+<text x="240" y="174.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">forem/forem</text>
+<text x="546.1324999999999" y="174.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">20%</text>
+<path d="M250,187.0 h259.43499999999995 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-259.43499999999995 z" fill="#2a78d6"><title>ollama/ollama: 17.9% (10 of 56 red runs)</title></path>
+<text x="240" y="200.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">ollama/ollama</text>
+<text x="519.435" y="200.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">18%</text>
+<path d="M250,213.0 h241.88249999999994 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-241.88249999999994 z" fill="#2a78d6"><title>bitcoin/bitcoin: 16.7% (11 of 66 red runs)</title></path>
+<text x="240" y="226.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">bitcoin/bitcoin</text>
+<text x="501.88249999999994" y="226.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">17%</text>
+<path d="M250,239.0 h214.15249999999997 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-214.15249999999997 z" fill="#2a78d6"><title>vercel/next.js: 14.8% (275 of 1859 red runs)</title></path>
+<text x="240" y="252.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">vercel/next.js</text>
+<text x="474.1525" y="252.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">15%</text>
+<path d="M250,265.0 h211.79250000000002 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-211.79250000000002 z" fill="#2a78d6"><title>mastodon/mastodon: 14.6% (18 of 123 red runs)</title></path>
+<text x="240" y="278.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">mastodon/mastodon</text>
+<text x="471.7925" y="278.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">15%</text>
+<path d="M250,291.0 h153.97249999999997 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-153.97249999999997 z" fill="#2a78d6"><title>prometheus/prometheus: 10.7% (18 of 168 red runs)</title></path>
+<text x="240" y="304.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">prometheus/prometheus</text>
+<text x="413.97249999999997" y="304.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">11%</text>
+<path d="M250,317.0 h153.3825 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-153.3825 z" fill="#2a78d6"><title>vitejs/vite: 10.7% (16 of 150 red runs)</title></path>
+<text x="240" y="330.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">vitejs/vite</text>
+<text x="413.3825" y="330.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">11%</text>
+<path d="M250,343.0 h141.8775 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-141.8775 z" fill="#2a78d6"><title>Stirling-Tools/Stirling-PDF: 9.9% (56 of 566 red runs)</title></path>
+<text x="240" y="356.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">Stirling-Tools/Stirling-PDF</text>
+<text x="401.8775" y="356.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">10%</text>
+<path d="M250,369.0 h131.84749999999997 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-131.84749999999997 z" fill="#2a78d6"><title>keycloak/keycloak: 9.2% (77 of 836 red runs)</title></path>
+<text x="240" y="382.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">keycloak/keycloak</text>
+<text x="391.84749999999997" y="382.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">9%</text>
+<path d="M250,395.0 h120.9325 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-120.9325 z" fill="#2a78d6"><title>facebook/react: 8.5% (5 of 59 red runs)</title></path>
+<text x="240" y="408.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">facebook/react</text>
+<text x="380.9325" y="408.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">8%</text>
+<path d="M250,421.0 h120.9325 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-120.9325 z" fill="#2a78d6"><title>godotengine/godot: 8.5% (10 of 118 red runs)</title></path>
+<text x="240" y="434.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">godotengine/godot</text>
+<text x="380.9325" y="434.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">8%</text>
+<path d="M250,447.0 h120.9325 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-120.9325 z" fill="#2a78d6"><title>react/react: 8.5% (5 of 59 red runs)</title></path>
+<text x="240" y="460.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">react/react</text>
+<text x="380.9325" y="460.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">8%</text>
+<path d="M250,473.0 h106.92000000000002 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-106.92000000000002 z" fill="#2a78d6"><title>firecrawl/firecrawl: 7.5% (10 of 133 red runs)</title></path>
+<text x="240" y="486.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">firecrawl/firecrawl</text>
+<text x="366.92" y="486.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">8%</text>
+<path d="M250,499.0 h96.30000000000001 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-96.30000000000001 z" fill="#2a78d6"><title>opencv/opencv: 6.8% (10 of 147 red runs)</title></path>
+<text x="240" y="512.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">opencv/opencv</text>
+<text x="356.3" y="512.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">7%</text>
+<path d="M250,525.0 h96.15249999999997 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-96.15249999999997 z" fill="#2a78d6"><title>infiniflow/ragflow: 6.8% (33 of 486 red runs)</title></path>
+<text x="240" y="538.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">infiniflow/ragflow</text>
+<text x="356.1525" y="538.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">7%</text>
+<path d="M250,551.0 h92.75999999999999 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-92.75999999999999 z" fill="#2a78d6"><title>discourse/discourse: 6.6% (28 of 427 red runs)</title></path>
+<text x="240" y="564.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">discourse/discourse</text>
+<text x="352.76" y="564.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">7%</text>
+<path d="M250,577.0 h88.1875 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-88.1875 z" fill="#2a78d6"><title>denoland/deno: 6.2% (4 of 64 red runs)</title></path>
+<text x="240" y="590.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">denoland/deno</text>
+<text x="348.1875" y="590.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">6%</text>
+<path d="M250,603.0 h87.30250000000001 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-87.30250000000001 z" fill="#2a78d6"><title>apache/airflow: 6.2% (60 of 970 red runs)</title></path>
+<text x="240" y="616.0" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5" fill="#52514e">apache/airflow</text>
+<text x="347.3025" y="616.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">6%</text>
+<line x1="298.2325" y1="86" x2="298.2325" y2="624" stroke="#52514e" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="304.2325" y="90" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">median of these 69: 3%</text>
+<text x="28" y="682" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">Source: redherring study, 28 Sep 2026 · all 122 repos in docs/study/repos.csv</text>
+</svg>

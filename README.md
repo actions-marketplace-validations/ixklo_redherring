@@ -1,32 +1,61 @@
-# redherring
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.svg">
+    <img alt="redherring: find the CI failures that weren't your fault" src="docs/banner-light.svg" width="640">
+  </picture>
+</p>
 
-[![PyPI](https://img.shields.io/pypi/v/redherring)](https://pypi.org/project/redherring/) [![CI](https://github.com/ixklo/redherring/actions/workflows/ci.yml/badge.svg)](https://github.com/ixklo/redherring/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+<p align="center">
+  <a href="https://pypi.org/project/redherring/"><img alt="PyPI" src="https://img.shields.io/pypi/v/redherring"></a>
+  <a href="https://pypi.org/project/redherring/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/redherring"></a>
+  <a href="https://github.com/ixklo/redherring/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/ixklo/redherring/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
 
-**Find the CI failures that weren't your fault.**
+<p align="center">
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#redherring-why-is-this-failure-mine">Explain a failure</a> ·
+  <a href="#github-action">GitHub Action</a> ·
+  <a href="#for-coding-agents">For coding agents</a> ·
+  <a href="docs/study/README.md">The study</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
 
-redherring reads the GitHub Actions history your repo already has and finds every run that went red, then turned green when someone re-ran the *same commit*. Nothing in the code changed between those two attempts, so whatever failed first was not caused by the commit: a flaky test, a network blip, a package registry hiccup, a runner that vanished. redherring opens the failed logs, names the tests (over 20 test-runner output formats) or the infrastructure cause, and ranks them.
+---
 
-Then, when a build fails, `redherring why` tells you (or your coding agent) which failures are known red herrings and which ones look real.
+When a CI run goes red and then turns green after someone presses **re-run**, nothing in the code changed. Whatever failed was a **red herring**: a flaky test, a network blip, a package registry hiccup, a runner that vanished.
 
-No server, no signup, nothing to install in CI first. If your repo has Actions history, the first run already has answers.
+redherring reads the GitHub Actions history your repo **already has**, finds every one of those, opens the failed logs, and names the flaky tests (20+ test-runner formats) or the infrastructure cause. When a build fails, `redherring why` tells you (or your coding agent) which failures are known red herrings and which look real.
+
+**No server, no signup, nothing to set up in CI first.** If your repo has Actions history, the first run already has answers.
 
 ![redherring scan on astral-sh/uv: 2,129 runs in 14 days, 280 went red, 94 of those (34%) turned green on a plain re-run; a table of named flaky tests, several Windows-only; flaky jobs grouped by cause](docs/demo-scan.svg)
 
-*Real output for a public repo, 28 September 2026. The "AI provider" cause is an AI code-review job failing with "Selected model is at capacity".*
+<sub>Real output for a public repo, 28 September 2026. The "AI provider" cause is an AI code-review job failing with "Selected model is at capacity".</sub>
 
-> **How common is this?** We ran it on 122 popular repos (1.25 million workflow runs, two weeks). For the median repo about 2% of red runs are red herrings; for a quarter of them it's 7% or more (uv 34%, VS Code 23%, Next.js 15%), and 690 runner-hours went to failed jobs that a re-run fixed. **[Read the study →](docs/study/README.md)**
+## Quickstart
 
-## Install
-
-redherring is a Python 3.11+ command-line tool. With [uv](https://docs.astral.sh/uv/):
+With [uv](https://docs.astral.sh/uv/) (or `pipx install redherring` / `pip install redherring`; Python 3.11+):
 
 ```sh
-uvx redherring scan OWNER/REPO
+uvx redherring scan OWNER/REPO                                   # what flakes here, and what it costs
+uvx redherring why https://github.com/OWNER/REPO/actions/runs/ID  # is this failure mine?
 ```
 
-or `pipx install redherring` / `pip install redherring`.
-
 It needs a GitHub token to read Actions logs. If you use the [GitHub CLI](https://cli.github.com/), it borrows `gh auth token` automatically; otherwise set `GH_TOKEN`. Any token works for public repositories; private ones need `actions: read`.
+
+## How common is this?
+
+We ran it on **122 popular repos** (1.25 million workflow runs over two weeks). For most repos it's small: about 2% of red runs. For a quarter of them it's **7% or more**, and in some it's a daily tax. Across all 122, **690 runner-hours** went to failed jobs that a plain re-run fixed.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/study/share-dark.svg">
+    <img alt="Bar chart: share of red CI runs that were red herrings for the 20 highest of 69 repos with 50 or more red runs. astral-sh/uv 34%, microsoft/vscode 23%, forem/forem 20%, ollama/ollama 18%, bitcoin/bitcoin 17%, vercel/next.js 15%, mastodon/mastodon 15%. The median of the 69 is 3%." src="docs/study/share-light.svg" width="760">
+  </picture>
+</p>
+
+Method, every repo's numbers, what causes them, and how accurate the classification is: **[read the study →](docs/study/README.md)**
 
 ## `redherring scan`: what flakes in this repo?
 

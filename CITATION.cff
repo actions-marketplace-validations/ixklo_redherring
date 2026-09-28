@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use redherring or its study of red herrings in open-source CI, please cite it."
+title: "redherring: find the CI failures that weren't your fault"
+abstract: >-
+  A command-line tool and GitHub Action that mines GitHub Actions history for runs that failed and then
+  passed on a re-run of the same commit, naming the flaky tests and infrastructure causes. Includes a
+  study of 122 popular repositories (1.25 million workflow runs over 14 days).
+type: software
+authors:
+  - alias: ixklo
+repository-code: "https://github.com/ixklo/redherring"
+url: "https://github.com/ixklo/redherring"
+license: MIT
+version: 0.1.1
+date-released: 2026-09-28
+keywords:
+  - flaky tests
+  - continuous integration
+  - GitHub Actions
+  - software testing
