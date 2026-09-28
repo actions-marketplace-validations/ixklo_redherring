@@ -104,7 +104,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.1.0
+      - uses: ixklo/redherring@v0.1.1
         with:
           comment: true
 ```
@@ -122,7 +122,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.1.0
+      - uses: ixklo/redherring@v0.1.1
         with:
           command: scan
           days: "30"
@@ -148,7 +148,7 @@ The file is small JSON (one entry per failed job: test names, cause, commit, OS,
           path: flake-ledger.json
           key: redherring-ledger-${{ github.run_id }}
           restore-keys: redherring-ledger-
-      - uses: ixklo/redherring@v0.1.0
+      - uses: ixklo/redherring@v0.1.1
         with:
           command: scan
           ledger: flake-ledger.json

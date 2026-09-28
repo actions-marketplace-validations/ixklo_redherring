@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 (2026-09-28)
+
+- The Action is named "redherring CI" so it can be listed on the GitHub Marketplace (a GitHub account
+  called "redherring" already exists). No behaviour changes.
+
 ## 0.1.0 (2026-09-28)
 
 First version.

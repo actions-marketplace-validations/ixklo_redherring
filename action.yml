@@ -1,4 +1,4 @@
-name: redherring
+name: redherring CI
 description: Explain CI failures from your own Actions history. Known flaky tests and infrastructure hiccups vs failures that look real.
 author: ixklo
 branding:

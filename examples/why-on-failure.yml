@@ -13,6 +13,6 @@ jobs:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.1.0
+      - uses: ixklo/redherring@v0.1.1
         with:
           comment: true
