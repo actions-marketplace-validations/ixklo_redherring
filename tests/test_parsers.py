@@ -393,3 +393,65 @@ def test_hint_skips_borders_and_exit_code_echoes():
 def test_more_infra_signatures(line, category):
     cause = classify([line, "##[error]Process completed with exit code 1."])
     assert cause is not None and cause.category == category
+
+
+@pytest.mark.parametrize(
+    "line,category",
+    [
+        (
+            "go: reading https://sum.golang.org/tile/8/0/x136/121: stream error: stream ID 273; INTERNAL_ERROR; received from peer",
+            "network",
+        ),
+        (
+            "subprocess.CalledProcessError: Command '['git', 'clone', 'https://gitlab.com/a/b']' returned non-zero exit status 128.",
+            "network",
+        ),
+        ("Error: HTTP 500 (https://api.github.com/repos/a/b/releases)", "GitHub service"),
+        (
+            "docs#build: command (D:/a/docs) pnpm.CMD run build exited (-1073741502)",
+            "runner environment",
+        ),
+        (
+            "./scripts/link.sh: /tmp/yarn: /bin/sh: bad interpreter: Text file busy",
+            "runner environment",
+        ),
+        ("Caused by: Error: Worker exited unexpectedly", "test worker crash"),
+        (
+            "Some tasks were terminated on timeout. Please check the logs of the tasks (above) for more details.",
+            "job timeout",
+        ),
+    ],
+)
+def test_audit_signatures(line, category):
+    cause = classify([line, "##[error]Process completed with exit code 1."])
+    assert cause is not None and cause.category == category
+
+
+def test_audit_false_positives_are_gone():
+    jvm = '{"level": "INFO", "message": "JVM arguments [-Xshare:auto, -XX:+HeapDumpOnOutOfMemoryError]"}'
+    assert classify([jvm, "##[error]Process completed with exit code 1."]) is None
+    denied = "fatal: unable to access 'https://github.com/a/b.git/': The requested URL returned error: 403"
+    assert classify([denied, "##[error]Process completed with exit code 128."]) is None
+
+
+def test_hint_prefers_compiler_errors():
+    lines = [
+        "error: could not compile `bevy_encase_derive` (lib) due to 3 previous errors",
+        "warning: build failed, waiting for other jobs to finish...",
+        "One or more CI commands failed:",
+        "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace",
+        "##[error]Process completed with exit code 1.",
+    ]
+    assert last_output(lines).startswith("error: could not compile")
+
+
+def test_testem_global_error_names_the_running_test():
+    text = (
+        "not ok 3612 Chrome 154.0 - [undefined ms] - Global error: Uncaught TypeError: boom\n"
+        "    ---\n"
+        "        message: >\n"
+        "            While executing test: Browser Id 4 - Acceptance: User Card - Inactive user: it shows less\n"
+    )
+    [f] = parse_failures(clean_lines(text))
+    assert f.test_id == "Acceptance: User Card - Inactive user: it shows less"
+    assert f.message.startswith("Uncaught TypeError")

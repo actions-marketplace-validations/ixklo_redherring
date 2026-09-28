@@ -87,6 +87,8 @@ _NODE_SPEC = re.compile(r"^\s*✖ (.+?) \([\d.]+m?s\)\s*$")
 _TAP = re.compile(r"^\s*not ok \d+(?: -)? (.+?)\s*$")
 _TAP_DIRECTIVE = re.compile(r"#\s*(?:SKIP|TODO)\b", re.I)
 _TESTEM_PREFIX = re.compile(r"^[A-Z][\w ]*? [\d.]+ - \[[^\]]*\] - ")
+# testem prefixes the running test with the browser instance, which changes between runs.
+_BROWSER_ID = re.compile(r"^Browser Id \d+ - ")
 _MOCHA_FAILING = re.compile(r"^\s+\d+ failing\s*$")
 _MOCHA_ITEM = re.compile(r"^(\s+)\d+\) (.+?)\s*$")
 
@@ -140,16 +142,29 @@ def parse_node_spec(lines: list[str]) -> list[TestFailure]:
     ]
 
 
+_WHILE_EXECUTING = re.compile(r"While executing test: (.+?)\s*$")
+
+
 def parse_tap(lines: list[str]) -> list[TestFailure]:
     out = []
-    for line in lines:
+    for i, line in enumerate(lines):
         if "not ok" not in line:
             continue
         m = _TAP.match(line)
         if not m or _TAP_DIRECTIVE.search(m[1]):
             continue
         title = _TESTEM_PREFIX.sub("", m[1])
-        out.append(TestFailure("tap", title))
+        if title.startswith("Global error:"):
+            # testem reports uncaught errors this way; the test that was running is named below.
+            running = next(
+                (w[1] for nxt in lines[i + 1 : i + 12] if (w := _WHILE_EXECUTING.search(nxt))), None
+            )
+            if running is None:
+                continue
+            name = _BROWSER_ID.sub("", running)
+            out.append(TestFailure("tap", name, FAILED, title.removeprefix("Global error: ")[:200]))
+            continue
+        out.append(TestFailure("tap", _BROWSER_ID.sub("", title)))
     return out
 
 

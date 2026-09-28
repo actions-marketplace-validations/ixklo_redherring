@@ -32,16 +32,32 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
         "job timeout",
         re.compile(
             r"has exceeded the maximum execution time of|The job has exceeded the maximum execution"
+            r"|Some tasks were terminated on timeout"
         ),
     ),
     (
         "out of memory",
         re.compile(
             r"JavaScript heap out of memory|fatal error: runtime: out of memory|Cannot allocate memory"
-            r"|OOMKilled|java\.lang\.OutOfMemoryError|exit code 137\b|^Killed\s*$|MemoryError\b"
+            r"|OOMKilled|java\.lang\.OutOfMemoryError|exit code 137\b|^Killed\s*$|^MemoryError\b"
         ),
     ),
     ("disk full", re.compile(r"No space left on device|\bENOSPC\b")),
+    (
+        "runner environment",
+        re.compile(
+            # 0xC0000142 STATUS_DLL_INIT_FAILED: Windows couldn't start the process at all.
+            r"exited \(-1073741502\)|exit code -1073741502|0xC0000142|3221225794"
+            r"|bad interpreter: Text file busy"
+        ),
+    ),
+    (
+        "test worker crash",
+        re.compile(
+            r"Worker exited unexpectedly|Worker forks emitted error|Jest worker encountered \d+ child process exceptions"
+            r"|A worker process has failed to exit gracefully"
+        ),
+    ),
     (
         "rate limited",
         re.compile(
@@ -82,8 +98,11 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|RemoteDisconnected|Read timed out|ReadTimeoutError|i/o timeout|connection timed out"
             r"|getaddrinfo (?:ENOTFOUND|EAI_AGAIN)|502 Bad Gateway|503 Service Unavailable|504 Gateway Time"
             r"|rpc error: code = Unavailable|keepalive ping failed|unexpected EOF while reading"
-            r"|fatal: unable to access 'https?://|\boperation timed out\b|Unexpected HTTP response: 5\d\d"
+            r"|fatal: unable to access 'https?://[^']*': (?!The requested URL returned error: 4)"
+            r"|\boperation timed out\b|Unexpected HTTP response: 5\d\d|Canceled because of SSL destruction"
             r"|The requested URL returned error: 5\d\d"
+            r"|stream error: stream ID \d+; INTERNAL_ERROR|proxy\.golang\.org.*(?:EOF|reset|timeout)"
+            r"|'git', 'clone'.*returned non-zero exit status 128|RPC failed; curl|early EOF"
         ),
     ),
     (
@@ -101,6 +120,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"Failed to (?:save|restore) cache|Cache service responded with [45]\d\d|Unable to reserve cache"
             r"|Failed to (?:Create|Finalize)Artifact|Artifact upload failed|Unable to (?:download|upload) artifact"
             r"|The operation was canceled\.\s*$|Internal Server Error.*api\.github\.com"
+            r"|HTTP 5\d\d \(https?://api\.github\.com"
         ),
     ),
 ]
@@ -113,6 +133,14 @@ _GENERIC_ERROR = re.compile(
 _NOT_A_HINT = re.compile(
     r"^\[?ELIFECYCLE\]? |^error Command failed with exit code|^npm (?:ERR!|error) (?:code|errno|path|command|A complete log)"
     r"|^DEBUG Command exited with code|^Error: Process completed with exit code|^make(?:\[\d+\])?: \*\*\*"
+    r"|^warning: build failed, waiting for other jobs|^note: run with `RUST_BACKTRACE|^shell: |^env:$"
+    r"|^\+ set [+-]x|^Duration\b|HOW TO REPRODUCE"
+)
+_LEADING_ERROR = re.compile(r"^(?:error|fatal|panic|FATAL|ERROR|Error)(?:\[[^\]]*\])?[:!]")
+_ERRORISH = re.compile(
+    r"\b(?:error|errors|failed|failure|fatal|panic|panicked|exception|could not|cannot|unable to"
+    r"|denied|refused|timed out|terminated|exited|crash(?:ed)?)\b",
+    re.I,
 )
 
 
@@ -123,15 +151,22 @@ def last_output(lines: list[str]) -> str:
             own = line.removeprefix("##[error]").strip()
             if own and not _GENERIC_ERROR.match(own):
                 return own[:240]
-            for prev in reversed(lines[max(0, i - 40) : i]):
-                text = prev.strip()
-                if (
-                    text
-                    and not text.startswith(("##[", "[command]"))
-                    and re.search(r"[A-Za-z]{3}", text)
-                    and not _NOT_A_HINT.search(text)
-                ):
-                    return text[:240]
+            window = [
+                text
+                for prev in lines[max(0, i - 40) : i]
+                if (text := prev.strip())
+                and not text.startswith(("##[", "[command]"))
+                and re.search(r"[A-Za-z]{3}", text)
+                and not _NOT_A_HINT.search(text)
+            ]
+            leading = [t for t in window if _LEADING_ERROR.match(t)]
+            if leading:
+                return leading[-1][:240]
+            errorish = [t for t in window if _ERRORISH.search(t)]
+            if errorish:
+                return errorish[-1][:240]
+            if window:
+                return window[-1][:240]
             return line.removeprefix("##[error]").strip()[:240]
     return ""
 
