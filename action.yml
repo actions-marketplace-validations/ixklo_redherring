@@ -14,7 +14,7 @@ inputs:
     default: ""
   days:
     description: How many days of history to learn from.
-    default: "30"
+    default: "14"
   workflow:
     description: "`scan` only: limit to one workflow (name or file)."
     default: ""
@@ -27,6 +27,9 @@ inputs:
   fail-on-real:
     description: "`why` only: fail this step when a failure looks real."
     default: "false"
+  cache:
+    description: "Keep redherring's cache (job lists and logs) between workflow runs with actions/cache, so later runs only fetch what's new. The Actions token allows about 1,000 API requests an hour per repository."
+    default: "true"
   github-token:
     description: "Token with `actions: read` on the repository."
     default: ${{ github.token }}
@@ -40,6 +43,12 @@ runs:
   using: composite
   steps:
     - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+    - if: inputs.cache == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/redherring-cache
+        key: redherring-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: redherring-${{ runner.os }}-
     - id: redherring
       shell: bash
       env:
@@ -52,6 +61,7 @@ runs:
         RH_LEDGER: ${{ inputs.ledger }}
         RH_COMMENT: ${{ inputs.comment }}
         RH_REPO: ${{ github.repository }}
+        REDHERRING_CACHE: ${{ runner.temp }}/redherring-cache/cache.sqlite
       run: |
         set -uo pipefail
         rh() { uvx --quiet --from "$GITHUB_ACTION_PATH" redherring "$@"; }

@@ -124,7 +124,7 @@ jobs:
           days: "30"
 ```
 
-Inputs: `command` (`why` or `scan`), `run-id`, `days`, `workflow`, `ledger`, `comment`, `fail-on-real`, `github-token`. Output: `recommendation`. From the command line, the same comment is `redherring why <run> --comment`.
+Inputs: `command` (`why` or `scan`), `run-id`, `days` (default 14), `workflow`, `ledger`, `comment`, `cache` (default on: keeps downloaded history between runs, because the Actions token allows about 1,000 API requests an hour), `fail-on-real`, `github-token`. Output: `recommendation`. From the command line, the same comment is `redherring why <run> --comment`.
 
 ## Keep your flake history: the ledger
 
