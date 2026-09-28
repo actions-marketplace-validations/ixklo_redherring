@@ -218,7 +218,10 @@ def _resolve_workflow(gh: GitHub, repo: str, name: str) -> int:
     for w in flows:
         if wanted in w["name"].lower() or wanted in w["path"].lower():
             return w["id"]
-    names = ", ".join(sorted(w["name"] for w in flows)) or "none"
+    all_names = sorted(w["name"] for w in flows if not w["name"].startswith(".github/"))
+    names = ", ".join(all_names[:15]) or "none"
+    if len(all_names) > 15:
+        names += f", … ({len(all_names) - 15} more)"
     raise ValueError(f"no workflow matching {name!r} in {repo}. Workflows: {names}")
 
 
