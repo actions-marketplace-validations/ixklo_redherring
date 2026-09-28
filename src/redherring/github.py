@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import time
 from collections.abc import Callable, Iterator
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -16,6 +17,7 @@ API = "https://api.github.com"
 # The runs endpoint returns at most 1000 results for any single filter, however you page.
 _SEARCH_CAP = 1000
 _MIN_WINDOW = timedelta(minutes=30)
+_LIST_WORKERS = 4
 
 
 class GitHubError(RuntimeError):
@@ -192,12 +194,30 @@ class GitHub:
         extra: dict[str, Any] | None = None,
         on_page: Callable[[int], None] | None = None,
     ) -> Iterator[dict]:
-        """Every run created in [since, until), splitting the window around the 1000 cap."""
+        """Every run created in [since, until), splitting the window around the 1000 cap.
+
+        Busy repos have tens of thousands of runs a fortnight, so whole days are listed a few
+        at a time in parallel (in order). Four at once stays well inside GitHub's limits.
+        """
         params: dict[str, Any] = {"exclude_pull_requests": "true", **(extra or {})}
         if status:
             params["status"] = status
         path = self.runs_path(repo, workflow_id)
-        yield from self._runs_window(path, since, until, params, on_page)
+        days = []
+        start = since
+        while start < until:
+            end = min(until, start + timedelta(days=1))
+            days.append((start, end))
+            start = end
+        if len(days) == 1:
+            yield from self._runs_window(path, since, until, params, on_page)
+            return
+        with ThreadPoolExecutor(_LIST_WORKERS) as pool:
+            chunks = pool.map(
+                lambda d: list(self._runs_window(path, d[0], d[1], params, on_page)), days
+            )
+            for chunk in chunks:
+                yield from chunk
 
     @staticmethod
     def runs_path(repo: str, workflow_id: int | None = None) -> str:
