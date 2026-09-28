@@ -10,6 +10,7 @@
   <a href="https://pypi.org/project/redherring/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/redherring"></a>
   <a href="https://github.com/ixklo/redherring/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/ixklo/redherring/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+  <a href="https://github.com/marketplace/actions/redherring-ci"><img alt="GitHub Marketplace" src="https://img.shields.io/badge/Marketplace-redherring%20CI-2ea44f?logo=github"></a>
 </p>
 
 <p align="center">
