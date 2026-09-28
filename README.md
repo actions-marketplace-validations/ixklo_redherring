@@ -12,6 +12,8 @@ No server, no signup, nothing to install in CI first. If your repo has Actions h
 
 *Real output for a public repo, 28 September 2026. The "AI provider" cause is an AI code-review job failing with "Selected model is at capacity".*
 
+> **How common is this?** We ran it on 122 popular repos (1.25 million workflow runs, two weeks). For the median repo about 2% of red runs are red herrings; for a quarter of them it's 7% or more (uv 34%, VS Code 23%, Next.js 15%), and 690 runner-hours went to failed jobs that a re-run fixed. **[Read the study →](docs/study/README.md)**
+
 ## Install
 
 redherring is a Python 3.11+ command-line tool. With [uv](https://docs.astral.sh/uv/):

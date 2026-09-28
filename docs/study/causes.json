@@ -1,0 +1,18 @@
+{
+ "unknown": 2313,
+ "flaky tests": 1508,
+ "network": 473,
+ "rate limited": 161,
+ "job timeout": 110,
+ "package registry": 91,
+ "GitHub service": 87,
+ "log expired": 69,
+ "runner environment": 69,
+ "service startup": 66,
+ "runner lost": 53,
+ "many tests at once": 48,
+ "disk full": 14,
+ "AI provider": 5,
+ "out of memory": 5,
+ "test worker crash": 4
+}

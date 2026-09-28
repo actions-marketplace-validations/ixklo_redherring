@@ -1,0 +1,123 @@
+repo,language,finished_runs,went_red,red_herring_runs,red_herring_share,named_flaky_tests,runner_hours_lost,top_cause
+2dust/v2rayN,C#,176,10,0,0.0,0,0.0,
+2dust/v2rayNG,Kotlin,99,8,0,0.0,0,0.0,
+addyosmani/agent-skills,JavaScript,92,13,0,0.0,0,0.0,
+affaan-m/ECC,JavaScript,351,139,1,0.0072,0,0.2,unknown
+android/compose-samples,Kotlin,195,38,1,0.0263,0,0.1,unknown
+android/nowinandroid,Kotlin,195,133,0,0.0,0,0.0,
+apache/airflow,Python,9296,970,60,0.0619,11,30.0,flaky tests
+apache/dubbo,Java,95,28,0,0.0,0,0.0,
+apache/kafka,Java,4093,742,7,0.0094,6,10.3,GitHub service
+apple/container,Swift,82,15,1,0.0667,0,0.6,unknown
+astral-sh/uv,Rust,2129,277,94,0.3394,44,6.9,service startup
+AvaloniaUI/Avalonia,C#,482,14,0,0.0,0,0.0,
+axios/axios,JavaScript,306,52,0,0.0,0,0.0,
+bagisto/bagisto,PHP,184,37,10,0.2703,16,4.6,package registry
+bevyengine/bevy,Rust,3404,627,13,0.0207,0,0.7,unknown
+bitcoin/bitcoin,C++,458,66,11,0.1667,1,3.0,unknown
+caddyserver/caddy,Go,734,119,1,0.0084,1,0.1,flaky tests
+clash-verge-rev/clash-verge-rev,Rust,684,95,1,0.0105,0,0.0,package registry
+cli/cli,Go,1360,25,0,0.0,0,0.0,
+composer/composer,PHP,238,10,0,0.0,0,0.0,
+coollabsio/coolify,PHP,1150,15,1,0.0667,0,0.0,package registry
+danielmiessler/SecLists,PHP,340,0,0,,0,0.0,
+dbeaver/dbeaver,Java,977,103,2,0.0194,0,0.0,log expired
+denoland/deno,Rust,183,64,4,0.0625,1,0.5,unknown
+Devolutions/UniGetUI,C#,267,21,6,0.2857,0,1.0,unknown
+discourse/discourse,Ruby,7915,427,28,0.0656,10,4.2,flaky tests
+EbookFoundation/free-programming-books,Python,199,11,0,0.0,0,0.0,
+elastic/elasticsearch,Java,11765,40,0,0.0,0,0.0,
+etcd-io/etcd,Go,239,18,0,0.0,0,0.0,
+facebook/fresco,Kotlin,101,1,0,0.0,0,0.0,
+facebook/react,JavaScript,1461,59,5,0.0847,0,0.1,network
+farion1231/cc-switch,Rust,699,80,0,0.0,0,0.0,
+fastapi/fastapi,Python,697,85,0,0.0,0,0.0,
+fastlane/fastlane,Ruby,472,16,8,0.5,0,0.6,unknown
+filamentphp/filament,PHP,1104,283,1,0.0035,0,0.0,unknown
+files-community/Files,C#,255,35,1,0.0286,0,0.2,log expired
+firecrawl/firecrawl,TypeScript,895,133,10,0.0752,0,0.5,unknown
+forem/forem,Ruby,634,61,12,0.1967,1,0.3,unknown
+freeCodeCamp/freeCodeCamp,TypeScript,2419,289,10,0.0346,4,3.0,flaky tests
+gin-gonic/gin,Go,245,20,0,0.0,0,0.0,
+godotengine/godot,C++,721,118,10,0.0847,0,2.6,unknown
+gohugoio/hugo,Go,287,60,3,0.05,2,3.5,disk full
+golang/go,Go,101,11,0,0.0,0,0.0,
+google-ai-edge/gallery,Kotlin,127,4,0,0.0,0,0.0,
+google/guava,Java,263,11,0,0.0,0,0.0,
+grafana/grafana,TypeScript,119324,5487,193,0.0352,63,45.0,unknown
+halo-dev/halo,Java,143,9,1,0.1111,0,0.1,unknown
+huggingface/transformers,Python,10852,1492,14,0.0094,18,1.7,flaky tests
+huginn/huginn,Ruby,164,28,1,0.0357,2,0.1,flaky tests
+iamgio/quarkdown,Kotlin,187,20,7,0.35,9,0.5,flaky tests
+icsharpcode/ILSpy,C#,561,20,4,0.2,0,1.3,GitHub service
+iina/iina,Swift,114,25,0,0.0,0,0.0,
+infiniflow/ragflow,Go,1797,486,33,0.0679,4,9.3,unknown
+iptv-org/iptv,TypeScript,6180,314,0,0.0,0,0.0,
+jesseduffield/lazygit,Go,564,46,0,0.0,0,0.0,
+JetBrains/compose-multiplatform,Kotlin,188,26,1,0.0385,1,0.6,flaky tests
+JuliusBrussee/caveman,Go,281,66,3,0.0455,1,0.1,unknown
+keycloak/keycloak,Java,7159,836,77,0.0921,26,21.2,flaky tests
+langflow-ai/langflow,Python,11091,916,43,0.0469,11,30.2,runner lost
+langgenius/dify,TypeScript,20087,1102,36,0.0327,16,2.5,flaky tests
+laravel/framework,PHP,2342,234,1,0.0043,0,0.0,service startup
+livewire/livewire,PHP,110,46,9,0.1957,14,0.7,flaky tests
+louislam/uptime-kuma,JavaScript,912,99,2,0.0202,2,0.6,flaky tests
+mastodon/mastodon,Ruby,5883,123,18,0.1463,6,1.6,unknown
+microsoft/markitdown,Python,63,13,0,0.0,0,0.0,
+microsoft/playwright,TypeScript,2106,733,0,0.0,0,0.0,
+microsoft/semantic-kernel,C#,249,113,0,0.0,0,0.0,
+microsoft/terminal,C++,107,0,0,,0,0.0,
+microsoft/TypeScript,Go,1490,188,2,0.0106,0,0.1,network
+microsoft/vscode,TypeScript,19520,1665,386,0.2318,90,97.3,flaky tests
+mihonapp/mihon,Kotlin,101,17,0,0.0,0,0.0,
+mrdoob/three.js,JavaScript,1238,64,3,0.0469,0,0.4,unknown
+n8n-io/n8n,TypeScript,63697,3301,121,0.0367,106,25.8,flaky tests
+netdata/netdata,Go,5333,253,9,0.0356,0,3.1,unknown
+nikitabobko/AeroSpace,Swift,98,10,0,0.0,0,0.0,
+nilbuild/developer-roadmap,TypeScript,157,4,0,0.0,0,0.0,
+NousResearch/hermes-agent,Python,61951,24335,292,0.012,95,29.9,flaky tests
+ocornut/imgui,C++,128,20,2,0.1,0,0.0,unknown
+ollama/ollama,Go,206,56,10,0.1786,6,2.0,flaky tests
+open-ani/animeko,Kotlin,360,170,9,0.0529,0,5.3,unknown
+open-webui/open-webui,Python,2292,781,0,0.0,0,0.0,
+openai/codex,Rust,21793,3557,26,0.0073,0,3.3,unknown
+openclaw/openclaw,TypeScript,676065,20749,909,0.0438,77,130.0,unknown
+opencv/opencv,C++,177,147,10,0.068,1,17.0,unknown
+permissionlesstech/bitchat,Swift,189,23,2,0.087,1,0.2,flaky tests
+PowerShell/PowerShell,C#,1334,106,6,0.0566,0,1.3,unknown
+prometheus/prometheus,Go,1556,168,18,0.1071,33,5.8,network
+public-apis/public-apis,Python,614,413,0,0.0,0,0.0,
+pydantic/pydantic,Python,462,97,4,0.0412,0,0.1,network
+pytest-dev/pytest,Python,250,82,1,0.0122,1,0.0,flaky tests
+python/mypy,Python,586,29,2,0.069,0,0.2,network
+rails/rails,Ruby,1822,152,0,0.0,0,0.0,
+rapid7/metasploit-framework,Ruby,932,49,0,0.0,0,0.0,
+react/react,JavaScript,1460,59,5,0.0847,0,0.1,network
+react/react-native,C++,6691,829,11,0.0133,0,7.1,network
+ReactiveX/RxJava,Java,95,10,0,0.0,0,0.0,
+rust-lang/rust,Rust,2297,466,7,0.015,2,6.0,unknown
+rust-lang/rust-analyzer,Rust,720,35,0,0.0,0,0.0,
+rustdesk/rustdesk,Rust,836,177,2,0.0113,0,2.5,log expired
+ruvnet/RuView,Rust,975,282,0,0.0,0,0.0,
+rxhanson/Rectangle,Swift,20,16,0,0.0,0,0.0,
+ShareX/ShareX,C#,183,2,2,1.0,0,0.0,log expired
+Significant-Gravitas/AutoGPT,Python,26640,1877,85,0.0453,12,15.6,flaky tests
+spring-projects/spring-boot,Java,759,71,1,0.0141,0,0.0,unknown
+spring-projects/spring-framework,Java,439,24,1,0.0417,4,0.2,flaky tests
+steipete/CodexBar,Swift,1236,312,13,0.0417,0,4.0,unknown
+Stirling-Tools/Stirling-PDF,Java,13393,566,56,0.0989,0,16.8,network
+supabase/supabase,TypeScript,33138,1137,20,0.0176,6,2.5,flaky tests
+sveltejs/svelte,JavaScript,147,14,2,0.1429,1,0.2,flaky tests
+tensorflow/tensorflow,C++,14556,2378,3,0.0013,1,0.7,network
+tesseract-ocr/tesseract,C++,146,20,0,0.0,0,0.0,
+TheAlgorithms/Java,Java,481,25,0,0.0,0,0.0,
+TheAlgorithms/Python,Python,3625,442,0,0.0,0,0.0,
+tiann/KernelSU,Kotlin,163,12,0,0.0,0,0.0,
+tokio-rs/tokio,Rust,809,48,2,0.0417,1,0.1,flaky tests
+utmapp/UTM,Swift,128,16,13,0.8125,0,7.2,runner environment
+vapor/vapor,Swift,146,46,0,0.0,0,0.0,
+vercel/next.js,JavaScript,18427,1859,275,0.1479,235,114.1,flaky tests
+vitejs/vite,TypeScript,1053,150,16,0.1067,15,1.4,flaky tests
+vorssaint/vorssaint-utils,Swift,2050,228,2,0.0088,0,0.5,unknown
+withastro/astro,TypeScript,4201,423,6,0.0142,0,0.5,runner environment
+yt-dlp/yt-dlp,Python,653,31,0,0.0,0,0.0,

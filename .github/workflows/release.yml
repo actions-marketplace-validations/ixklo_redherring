@@ -1,11 +1,10 @@
-# Publishes to PyPI when a version tag (v0.1.0, ...) is pushed.
+# Publishes a tagged version to PyPI. Started by hand: gh workflow run release.yml --ref v0.1.0
 # One-time setup on pypi.org: add a "trusted publisher" for this repo, workflow release.yml,
 # environment "pypi". No tokens or secrets are stored anywhere.
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
