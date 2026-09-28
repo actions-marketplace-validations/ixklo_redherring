@@ -44,3 +44,12 @@ jobs:
         with:
           command: scan
           days: "7"
+      - name: scan again into a ledger
+        uses: ./
+        with:
+          command: scan
+          days: "7"
+          ledger: ${{ runner.temp }}/ledger.json
+      - name: ledger was written
+        shell: bash
+        run: python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert d['tool']=='redherring' and d['version']==1; print(len(d['entries']), 'entries')" "$RUNNER_TEMP/ledger.json"

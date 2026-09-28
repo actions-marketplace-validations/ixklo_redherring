@@ -134,6 +134,8 @@ class ScanResult:
     tests: list[TestStat] = field(default_factory=list)
     red_seconds: list[float] = field(default_factory=list)
     api_requests: int = 0
+    # Older evidence from a ledger, outside this scan's window: feeds the flaky tables only.
+    history_jobs: list[FailedJob] = field(default_factory=list)
 
     @property
     def runs_went_red(self) -> int:
@@ -159,10 +161,16 @@ class ScanResult:
     def test_index(self) -> dict[str, TestStat]:
         return {t.test_id: t for t in self.tests}
 
+    @property
+    def evidence_jobs(self) -> list[FailedJob]:
+        """Red-herring jobs from this window plus any older ones from a ledger."""
+        older = [j for j in self.history_jobs if j.kind not in (KIND_GATE, KIND_SUMMARY)]
+        return self.herring_jobs + older
+
     def job_causes(self) -> list[tuple[str, int, Counter]]:
         """Jobs that flaked without naming a test, with what caused them."""
         by_job: dict[str, Counter] = defaultdict(Counter)
-        for j in self.herring_jobs:
+        for j in self.evidence_jobs:
             if j.kind == KIND_TESTS:
                 continue
             by_job[j.job_name][j.infra.category if j.infra else j.kind] += 1
@@ -288,6 +296,7 @@ class Scanner:
         until: datetime | None = None,
         workflow_id: int | None = None,
         branch: str | None = None,
+        prior: list[FailedJob] | None = None,
     ) -> ScanResult:
         until = until or datetime.now(UTC)
         since = until - timedelta(days=days)
@@ -378,7 +387,15 @@ class Scanner:
             if first_end and done and herring:
                 result.red_seconds.append(max(0.0, (done - first_end).total_seconds()))
 
-        result.tests = aggregate_tests(failed)
+        if prior:
+            live = {(j.run_id, j.attempt, j.job_id) for j in failed}
+            result.history_jobs = [
+                j
+                for j in prior
+                if (j.run_id, j.attempt, j.job_id) not in live
+                and (branch is None or j.branch == branch)
+            ]
+        result.tests = aggregate_tests(failed + result.history_jobs)
         result.api_requests = self.gh.requests - start_requests
         return result
 

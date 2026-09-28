@@ -119,6 +119,12 @@ def print_scan(r: ScanResult, console: Console, *, limit: int = 15) -> None:
             )
         console.print()
 
+    if r.history_jobs:
+        console.print(
+            f"  Includes {len(r.history_jobs)} older red-herring job(s) from the ledger, "
+            "from before this window.",
+            style="dim",
+        )
     retried = [t for t in r.tests if t.in_job_retries and not t.times]
     if retried:
         console.print(
@@ -274,6 +280,7 @@ def scan_json(r: ScanResult) -> dict[str, Any]:
             }
             for j in r.failed_jobs
         ],
+        "ledger_jobs_used": len(r.history_jobs),
         "api_requests": r.api_requests,
     }
 

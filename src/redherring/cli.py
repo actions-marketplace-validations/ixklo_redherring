@@ -7,10 +7,11 @@ import contextlib
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 from rich.console import Console
 
-from . import __version__
+from . import __version__, ledger
 from .cache import Cache
 from .github import GitHub, GitHubError, resolve_token
 from .render import dumps, print_scan, print_why, scan_json, scan_markdown, why_json, why_markdown
@@ -61,6 +62,17 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--workflow", help="only this workflow (name or file, e.g. ci.yml)")
     s.add_argument("--branch", help="only runs on this branch")
     s.add_argument("--limit", type=int, default=15, help="rows per table (default 15)")
+    s.add_argument(
+        "--ledger",
+        help="JSON file to merge this scan's evidence into (created if missing); keeps flake history "
+        "after GitHub deletes old runs",
+    )
+    s.add_argument(
+        "--keep-days",
+        type=int,
+        default=365,
+        help="drop ledger entries older than this (default 365)",
+    )
     _common(s)
 
     w = sub.add_parser("why", help="explain a failed run: red herrings vs failures that look real")
@@ -70,6 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument(
         "--no-main-check", action="store_true", help="don't look at the default branch's latest run"
     )
+    w.add_argument("--ledger", help="a ledger written by `scan --ledger`, used as extra history")
     _common(w)
     return p
 
@@ -142,7 +155,14 @@ def _scan(args, gh: GitHub, scanner: Scanner, out: Console, err: Console, stop) 
     if args.days < 1:
         raise ValueError("--days must be at least 1")
     workflow_id = _resolve_workflow(gh, repo, args.workflow) if args.workflow else None
-    result = scanner.scan(repo, days=args.days, workflow_id=workflow_id, branch=args.branch)
+    ledger_path = Path(args.ledger) if args.ledger else None
+    prior = ledger.load(ledger_path, repo) if ledger_path else []
+    result = scanner.scan(
+        repo, days=args.days, workflow_id=workflow_id, branch=args.branch, prior=prior
+    )
+    if ledger_path:
+        merged = ledger.merge(prior, result.failed_jobs, keep_days=args.keep_days)
+        ledger.save(ledger_path, repo, merged)
     stop()
     if args.format == "json":
         print(dumps(scan_json(result)))
@@ -156,8 +176,15 @@ def _scan(args, gh: GitHub, scanner: Scanner, out: Console, err: Console, stop) 
 def _why(args, scanner: Scanner, out: Console, err: Console, stop) -> int:
     repo_arg = normalize_repo(args.repo) if args.repo else repo_from_git()
     repo, run_id, attempt = parse_target(args.run, repo_arg)
+    prior = ledger.load(Path(args.ledger), repo) if args.ledger else []
     e = explain(
-        scanner, repo, run_id, attempt=attempt, days=args.days, check_main=not args.no_main_check
+        scanner,
+        repo,
+        run_id,
+        attempt=attempt,
+        days=args.days,
+        check_main=not args.no_main_check,
+        prior=prior,
     )
     stop()
     if args.format == "json":

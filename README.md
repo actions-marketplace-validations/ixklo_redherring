@@ -117,7 +117,33 @@ jobs:
           days: "30"
 ```
 
-Inputs: `command` (`why` or `scan`), `run-id`, `days`, `workflow`, `fail-on-real`, `github-token`. Output: `recommendation`.
+Inputs: `command` (`why` or `scan`), `run-id`, `days`, `workflow`, `ledger`, `fail-on-real`, `github-token`. Output: `recommendation`.
+
+## Keep your flake history: the ledger
+
+From 1 October 2026 GitHub deletes workflow runs once they pass your log-retention period (90 days by default). Past that, redherring has nothing to read. A ledger keeps the evidence:
+
+```sh
+redherring scan --ledger .github/flake-ledger.json          # merges new evidence into the file
+redherring why "$RUN" --ledger .github/flake-ledger.json    # uses it as extra history
+```
+
+The file is small JSON (one entry per failed job: test names, cause, commit, OS, link). Keep it anywhere durable. You can commit it, or carry it between scheduled runs with `actions/cache`:
+
+```yaml
+    steps:
+      - uses: actions/cache@v6
+        with:
+          path: flake-ledger.json
+          key: redherring-ledger-${{ github.run_id }}
+          restore-keys: redherring-ledger-
+      - uses: ixklo/redherring@v0.1.0
+        with:
+          command: scan
+          ledger: flake-ledger.json
+```
+
+Entries older than a year are dropped (`--keep-days`).
 
 ## How it decides
 
@@ -145,7 +171,7 @@ Missing yours? A parser is one function and a test with a real log excerpt. See 
 
 ## Limits, honestly
 
-- **History has an expiry date.** Job logs are kept for 90 days by default, and [from 1 October 2026](https://github.blog/changelog/2026-08-27-actions-retention-will-cover-checks-workflow-runs-and-statuses/) GitHub deletes the workflow runs themselves once they pass the repo's log retention period (90 days by default, and at most 90 days for public repos). `--days` beyond that finds nothing.
+- **History has an expiry date.** Job logs are kept for 90 days by default, and [from 1 October 2026](https://github.blog/changelog/2026-08-27-actions-retention-will-cover-checks-workflow-runs-and-statuses/) GitHub deletes the workflow runs themselves once they pass the repo's log retention period (90 days by default, and at most 90 days for public repos). `--days` beyond that finds nothing; use a [ledger](#keep-your-flake-history-the-ledger) to keep what was found.
 - **Only re-runs count.** Repos that never press re-run, or retry inside the job without reporting it, show fewer flakes than they have. Playwright, nextest and pytest-rerunfailures retries are recognised when they appear in a failed job's log.
 - **Big repos cost API requests.** A busy monorepo can take a few thousand requests for 30 days. redherring waits out rate limits on its own, and caches everything immutable (attempt job lists, logs) so later runs only fetch what's new.
 - **GitHub Actions only**, for now.

@@ -101,6 +101,7 @@ def explain(
     attempt: int | None = None,
     days: int = 30,
     check_main: bool = True,
+    prior: list[FailedJob] | None = None,
 ) -> Explanation:
     gh: GitHub = scanner.gh
     run = gh.run(repo, run_id)
@@ -117,7 +118,9 @@ def explain(
     scanner.progress(
         f"learning this repo's flaky tests from the last {days} days of {run.get('name')!r}"
     )
-    history = scanner.scan(repo, days=days, workflow_id=run.get("workflow_id"))
+    wf = run.get("name")
+    prior = [j for j in (prior or []) if not wf or j.workflow == wf]
+    history = scanner.scan(repo, days=days, workflow_id=run.get("workflow_id"), prior=prior)
     out.history = history
     known = history.test_index()
     job_history = {name: total for name, total, _ in history.job_causes()}
