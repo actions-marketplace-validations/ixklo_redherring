@@ -12,7 +12,7 @@ redherring why <run-url> --format json
 ```
 
 (`<run-url>` is `https://github.com/OWNER/REPO/actions/runs/ID`. If `redherring` isn't installed:
-`uvx --from git+https://github.com/ixklo/redherring redherring why <run-url> --format json`.)
+`uvx redherring why <run-url> --format json`.)
 
 Read `recommendation`:
 

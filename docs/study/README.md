@@ -108,7 +108,7 @@ Three audits, each on 53-60 **fresh** failed jobs (never an earlier audit's job 
 ## Reproduce
 
 ```sh
-uvx --from git+https://github.com/ixklo/redherring redherring scan OWNER/REPO --days 14 --format json > OWNER_REPO.json
+uvx redherring scan OWNER/REPO --days 14 --format json > OWNER_REPO.json
 ```
 
 Numbers shift over time: runs keep coming, and from 1 October 2026 GitHub deletes runs older than a repo's log retention (90 days by default).

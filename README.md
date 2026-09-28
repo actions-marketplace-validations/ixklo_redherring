@@ -1,5 +1,7 @@
 # redherring
 
+[![PyPI](https://img.shields.io/pypi/v/redherring)](https://pypi.org/project/redherring/) [![CI](https://github.com/ixklo/redherring/actions/workflows/ci.yml/badge.svg)](https://github.com/ixklo/redherring/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 **Find the CI failures that weren't your fault.**
 
 redherring reads the GitHub Actions history your repo already has and finds every run that went red, then turned green when someone re-ran the *same commit*. Nothing in the code changed between those two attempts, so whatever failed first was not caused by the commit: a flaky test, a network blip, a package registry hiccup, a runner that vanished. redherring opens the failed logs, names the tests (over 20 test-runner output formats) or the infrastructure cause, and ranks them.
@@ -19,10 +21,10 @@ No server, no signup, nothing to install in CI first. If your repo has Actions h
 redherring is a Python 3.11+ command-line tool. With [uv](https://docs.astral.sh/uv/):
 
 ```sh
-uvx --from git+https://github.com/ixklo/redherring redherring scan OWNER/REPO
+uvx redherring scan OWNER/REPO
 ```
 
-or `pipx install git+https://github.com/ixklo/redherring`.
+or `pipx install redherring` / `pip install redherring`.
 
 It needs a GitHub token to read Actions logs. If you use the [GitHub CLI](https://cli.github.com/), it borrows `gh auth token` automatically; otherwise set `GH_TOKEN`. Any token works for public repositories; private ones need `actions: read`.
 
