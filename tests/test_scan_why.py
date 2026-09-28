@@ -295,3 +295,13 @@ def test_failed_count_is_split_when_total_count_is_capped():
     fake._list_runs = capped
     gh = GitHub("t", transport=fake.transport())
     assert gh.count_runs(REPO, at("2026-08-28T00:00:00"), UNTIL, status="failure") == 1
+
+
+def test_rerun_after_a_cancelled_attempt_never_went_red():
+    fake = Fake()
+    history(fake)
+    fake.run(107, attempt=2, sha="G", created="2026-09-25T12:00:00")
+    fake.job(107, 1, 1071, "test (ubuntu)", "cancelled")
+    r = make(fake).scan(REPO, days=30, until=UNTIL)
+    assert len(r.recovered_runs) == 5  # 107 was re-run...
+    assert r.runs_went_red == 5  # ...but never went red

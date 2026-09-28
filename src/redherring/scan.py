@@ -139,8 +139,11 @@ class ScanResult:
 
     @property
     def runs_went_red(self) -> int:
-        """Runs whose first attempt failed: the ones that ended red plus the re-run ones."""
-        return self.runs_failed + len(self.recovered_runs)
+        """Runs that ended red, plus re-run runs whose earlier attempt really failed.
+
+        A run re-run after its first attempt was cancelled never went red, so it isn't counted.
+        """
+        return self.runs_failed + len({j.run_id for j in self.failed_jobs})
 
     @property
     def herring_jobs(self) -> list[FailedJob]:
