@@ -494,3 +494,82 @@ def test_env_block_is_not_a_hint():
         "##[error]Process completed with exit code 1.",
     ]
     assert last_output(lines) == "real problem"
+
+
+AUDIT2 = [
+    (
+        "pytest-xdist inherited location is not part of the id",
+        "[gw1] [ 36%] FAILED tests/m/test_x.py::T::test_a_1_same <- tests/generation/test_utils.py \n"
+        "FAILED tests/m/test_x.py::T::test_a_1_same - RuntimeError: size mismatch\n",
+        [("pytest", "tests/m/test_x.py::T::test_a_1_same")],
+    ),
+    (
+        "playwright header ruler",
+        "  1) [chromium] › test/e2e/specs/status-page.spec.js:18:5 › Status Page › create and edit ───────────────\n",
+        [("playwright", "test/e2e/specs/status-page.spec.js › Status Page › create and edit")],
+    ),
+    (
+        "not nextest without a duration",
+        "  FAIL Copilot: 160.1s\n",
+        [],
+    ),
+    (
+        "node:test failing tests section",
+        "✖ SFTP Monitor (real OpenSSH server) (1575.43ms)\n✖ failing tests:\n\ntest at test/a.js:3:5\n"
+        "✖ check() sets status to UP with correct password\n✖ check() throws when passphrase is wrong\n",
+        [
+            ("node:test", "check() sets status to UP with correct password"),
+            ("node:test", "check() throws when passphrase is wrong"),
+        ],
+    ),
+    (
+        "gradle verbose test logging",
+        "Gradle Test Run :core:test > Gradle Test Executor 67 > AuthorizerIntegrationTest > testNoAccess(String) FAILED\n"
+        "> Task :core:test FAILED\n",
+        [("junit", "AuthorizerIntegrationTest.testNoAccess(String)")],
+    ),
+    (
+        "failed tests list",
+        "failures:\n\n---- node_compat::a.js ----\nerror: boom\nfailed tests:\n    node_compat::a.js\n\n1 failed of 44\n",
+        [("test-runner", "node_compat::a.js")],
+    ),
+]
+
+
+@pytest.mark.parametrize("label,text,expected", AUDIT2, ids=[a[0] for a in AUDIT2])
+def test_audit2_formats(label, text, expected):
+    got = ids(text)
+    for item in expected:
+        assert item in got
+    if not expected:
+        assert got == []
+    else:
+        assert len(got) == len(expected) or label.startswith("node:test")
+
+
+@pytest.mark.parametrize(
+    "line,category",
+    [
+        (
+            "Address already in use - bind(2) for 127.0.0.1:60098 (Errno::EADDRINUSE)",
+            "service startup",
+        ),
+        (
+            "failed to set up container networking: driver failed programming external connectivity",
+            "service startup",
+        ),
+        (
+            "error NU1301: Failed to retrieve information: Response status code does not indicate success: 403 (Forbidden).",
+            "package registry",
+        ),
+        ("urllib.error.HTTPError: HTTP Error 403: rate limit exceeded", "rate limited"),
+        ("Final attempt failed. Timeout of 3000000ms hit", "job timeout"),
+        (
+            "Server returned HTTP response code: 504 for URL: https://services.gradle.org/distributions/x.zip",
+            "network",
+        ),
+    ],
+)
+def test_audit2_signatures(line, category):
+    cause = classify([line, "##[error]Process completed with exit code 1."])
+    assert cause is not None and cause.category == category

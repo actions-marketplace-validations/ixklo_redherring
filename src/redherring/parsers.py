@@ -52,7 +52,8 @@ def parse_pytest(lines: list[str]) -> list[TestFailure]:
             continue
         s = line.strip()
         if m := _PYTEST.match(s):
-            out.append(TestFailure("pytest", _norm_path(m[2].strip()), FAILED, _short(m[3])))
+            test_id = _norm_path(m[2].split(" <- ", 1)[0].strip())
+            out.append(TestFailure("pytest", test_id, FAILED, _short(m[3])))
         elif m := _PYTEST_COLLECT.match(s):
             out.append(TestFailure("pytest", _norm_path(m[1]), FAILED, _short(m[2])))
         elif m := _PYTEST_RERUN.match(s):
@@ -134,12 +135,24 @@ def parse_bun(lines: list[str]) -> list[TestFailure]:
     ]
 
 
+_NODE_FAILING = re.compile(r"^\s*✖ failing tests:\s*$")
+_NODE_SUMMARY_ITEM = re.compile(r"^\s*✖ (.+?)(?: \([\d.]+m?s\))?\s*$")
+
+
 def parse_node_spec(lines: list[str]) -> list[TestFailure]:
-    return [
-        TestFailure("node:test", m[1])
-        for line in lines
-        if "✖" in line and (m := _NODE_SPEC.match(line))
+    start = next((i for i, line in enumerate(lines) if _NODE_FAILING.match(line)), None)
+    if start is None:
+        return [
+            TestFailure("node:test", m[1])
+            for line in lines
+            if "✖" in line and (m := _NODE_SPEC.match(line))
+        ]
+    # The summary names suites and tests; keep the leaves (a suite is followed by its tests).
+    names = [
+        m[1] for line in lines[start + 1 :] if "✖" in line and (m := _NODE_SUMMARY_ITEM.match(line))
     ]
+    names = [n for n in names if not re.match(r"\d+ problems? \(", n)]
+    return [TestFailure("node:test", n) for n in dict.fromkeys(names)]
 
 
 _WHILE_EXECUTING = re.compile(r"While executing test: (.+?)\s*$")
@@ -199,7 +212,7 @@ def parse_mocha(lines: list[str]) -> list[TestFailure]:
 _PW_HEADER = re.compile(r"^\s*\d+\) \[([^\]]+)\] › (\S+?):\d+:\d+ › (.+?)(?:\s+─+)?\s*$")
 _PW_SUMMARY_COUNT = re.compile(r"^\s+\d+ (failed|flaky|passed|skipped|did not run|interrupted)\b")
 _PW_SUMMARY_ITEM = re.compile(r"^\s+\[([^\]]+)\] › (\S+?):\d+:\d+ › (.+?)\s*$")
-_PW_RETRY = re.compile(r"\s+\(retry #\d+\)$")
+_PW_RETRY = re.compile(r"\s+\(retry #\d+\)$|\s*[─━]+\s*$")
 
 
 def parse_playwright(lines: list[str]) -> list[TestFailure]:
@@ -273,8 +286,21 @@ def _go_leaves(pkg: str, names: list[tuple[str, str]]) -> list[TestFailure]:
 _LIBTEST = re.compile(r"^test (\S+) \.\.\. FAILED\s*$")
 _NEXTEST = re.compile(
     r"^\s*(FAIL|TIMEOUT|SIGSEGV|SIGABRT|SIGKILL|ABORT|FLAKY(?: \d+/\d+)?)"
-    r"(?: \[\s*[\d.]+s\])?(?: \(\s*\d+/\d+\))? (\S+) (\S+)\s*$"
+    r" \[\s*[>\d.]+s\](?: \(\s*[\d─]+/\d+\))? (\S+) (\S+)\s*$"
 )
+
+
+def parse_failed_list(lines: list[str]) -> list[TestFailure]:
+    """ "failed tests:" followed by indented names (Deno's and other file-based test runners)."""
+    out = []
+    for i, line in enumerate(lines):
+        if line.strip() != "failed tests:":
+            continue
+        for nxt in lines[i + 1 : i + 200]:
+            if not nxt.startswith((" ", "\t")) or not nxt.strip():
+                break
+            out.append(TestFailure("test-runner", nxt.strip()))
+    return out
 
 
 def parse_rust(lines: list[str]) -> list[TestFailure]:
@@ -337,6 +363,7 @@ _SUREFIRE_OLD = re.compile(
 )
 _SUREFIRE_CLASS = re.compile(r"^\[ERROR\] Tests run: .*<<< (?:FAILURE|ERROR)! -+ in ([\w.$]+)")
 _GRADLE = re.compile(r"^([A-Za-z_][\w.$]*) > (.+?) FAILED\s*$")
+_GRADLE_VERBOSE = re.compile(r"^Gradle Test Run \S+ > Gradle Test Executor \d+ > ")
 
 
 def parse_junit(lines: list[str]) -> list[TestFailure]:
@@ -350,8 +377,10 @@ def parse_junit(lines: list[str]) -> list[TestFailure]:
                 methods.append(TestFailure("junit", f"{m[2]}.{m[1]}"))
             elif m := _SUREFIRE_CLASS.match(line):
                 classes.append(m[1])
-        elif line.endswith("FAILED") and " > " in line and (m := _GRADLE.match(line.strip())):
-            methods.append(TestFailure("junit", f"{m[1]}.{m[2]}"))
+        elif line.endswith("FAILED") and " > " in line:
+            plain = _GRADLE_VERBOSE.sub("", line.strip())
+            if m := _GRADLE.match(plain):
+                methods.append(TestFailure("junit", f"{m[1]}.{m[2]}"))
     # Class-level ids only when no failing method was named at all (suite classes often
     # report methods under a different class than the "Tests run: ... in X" line).
     if not methods:
@@ -423,6 +452,7 @@ PARSERS: list[Callable[[list[str]], list[TestFailure]]] = [
     parse_playwright,
     parse_go,
     parse_rust,
+    parse_failed_list,
     parse_rspec,
     parse_minitest,
     parse_junit,

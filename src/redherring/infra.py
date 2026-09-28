@@ -32,7 +32,8 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
         "job timeout",
         re.compile(
             r"has exceeded the maximum execution time of|The job has exceeded the maximum execution"
-            r"|Some tasks were terminated on timeout"
+            r"|Some tasks were terminated on timeout|Final attempt failed\. Timeout of \d+ms hit"
+            r"|Waiting for flows to complete has timed out"
         ),
     ),
     (
@@ -65,7 +66,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
         "rate limited",
         re.compile(
             r"API rate limit exceeded|secondary rate limit|\b429 Too Many Requests|toomanyrequests"
-            r"|You have reached your pull rate limit|status code: 429"
+            r"|You have reached your pull rate limit|status code: 429|HTTP Error 403: rate limit exceeded"
         ),
     ),
     (
@@ -90,6 +91,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|Error response from daemon: (?:Get|Head|pull)|net/http: TLS handshake timeout"
             r"|CondaHTTPError|HTTP \d{3} (?:Forbidden|Too Many Requests|Service Unavailable) for url"
             r"|could not download file from|error downloading file|failed to fetch anonymous token"
+            r"|error NU1301: .*(?:40[39]|5\d\d)|HTTP status server error \(5\d\d"
         ),
     ),
     (
@@ -103,7 +105,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|rpc error: code = Unavailable|keepalive ping failed|unexpected EOF while reading"
             r"|fatal: unable to access 'https?://[^']*': (?!The requested URL returned error: 4)"
             r"|\boperation timed out\b|Unexpected HTTP response: 5\d\d|Canceled because of SSL destruction"
-            r"|The requested URL returned error: 5\d\d"
+            r"|The requested URL returned error: 5\d\d|Server returned HTTP response code: 5\d\d for URL"
             r"|stream error: stream ID \d+; INTERNAL_ERROR|proxy\.golang\.org.*(?:EOF|reset|timeout)"
             r"|HTTP Error 5\d\d: (?:Internal Server Error|Bad Gateway|Service Unavailable|Gateway Time-?out)"
             r"|'git', 'clone'.*returned non-zero exit status 128|RPC failed; curl|early EOF"
@@ -116,6 +118,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|dependency failed to start|container \S+ is unhealthy|Service container \S+ failed"
             r"|Failed to initialize container|failed to connect to the docker API"
             r"|Cannot connect to the Docker daemon|error during connect: .*docker"
+            r"|Address already in use - bind\(2\)|\bEADDRINUSE\b|failed to set up container networking"
         ),
     ),
     (
