@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass, field
@@ -35,6 +36,9 @@ class Fake:
     # PR number -> issue comments
     comments: dict[int, list[dict]] = field(default_factory=dict)
     writes: list[tuple[str, str, dict]] = field(default_factory=list)
+    # Answer If-None-Match with 304 like GitHub does (304s cost no rate limit).
+    etags: bool = True
+    not_modified: int = 0
 
     def run(
         self,
@@ -103,6 +107,18 @@ class Fake:
         return httpx.MockTransport(self.handle)
 
     def handle(self, request: httpx.Request) -> httpx.Response:
+        resp = self._route(request)
+        if not self.etags or request.method != "GET" or resp.status_code != 200:
+            return resp
+        if "json" not in resp.headers.get("content-type", ""):
+            return resp
+        etag = '"' + hashlib.md5(resp.content).hexdigest() + '"'
+        if request.headers.get("if-none-match") == etag:
+            self.not_modified += 1
+            return httpx.Response(304, headers={"etag": etag})
+        return httpx.Response(200, content=resp.content, headers={**resp.headers, "etag": etag})
+
+    def _route(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
         q = dict(request.url.params)
         self.calls.append(f"{path}?{request.url.query.decode()}")

@@ -72,6 +72,13 @@ def ago(dt: datetime | None, now: datetime | None = None) -> str:
     return f"{h}h ago" if h >= 1 else "just now"
 
 
+def requests_note(r: ScanResult) -> str:
+    note = f"{r.api_requests} GitHub API requests"
+    if r.api_free:
+        note += f" (+{r.api_free} unchanged, free)"
+    return note
+
+
 def pct(part: int, whole: int) -> str:
     return f"{100 * part / whole:.0f}%" if whole else "-"
 
@@ -184,7 +191,7 @@ def print_scan(r: ScanResult, console: Console, *, limit: int = 15) -> None:
         console.print(
             "No run in this window failed and then passed on a re-run. Nothing to call flaky."
         )
-    console.print(f"[dim]{r.api_requests} GitHub API requests · redherring {__version__}[/dim]")
+    console.print(Text(f"{requests_note(r)} · redherring {__version__}", style="dim"))
 
 
 # --- scan: markdown ---------------------------------------------------------------------
@@ -226,7 +233,7 @@ def scan_markdown(r: ScanResult, *, limit: int = 25) -> str:
         )
     if not r.recovered_runs:
         out.append("No run in this window failed and then passed on a re-run.\n")
-    out.append(f"<sub>redherring {__version__} · {r.api_requests} API requests</sub>")
+    out.append(f"<sub>redherring {__version__} · {requests_note(r)}</sub>")
     return "\n".join(out)
 
 
@@ -301,6 +308,7 @@ def scan_json(r: ScanResult) -> dict[str, Any]:
         ],
         "ledger_jobs_used": len(r.history_jobs),
         "api_requests": r.api_requests,
+        "api_requests_free": r.api_free,
     }
 
 

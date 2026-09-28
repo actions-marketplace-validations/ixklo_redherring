@@ -53,3 +53,14 @@ jobs:
       - name: ledger was written
         shell: bash
         run: python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert d['tool']=='redherring' and d['version']==1; print(len(d['entries']), 'entries')" "$RUNNER_TEMP/ledger.json"
+      - name: explain this run with the action (nothing has failed)
+        id: why
+        uses: ./
+        with:
+          command: why
+          days: "7"
+      - name: why set its output
+        shell: bash
+        env:
+          REC: ${{ steps.why.outputs.recommendation }}
+        run: test "$REC" = "nothing failed"

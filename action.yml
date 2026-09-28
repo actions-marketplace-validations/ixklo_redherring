@@ -62,6 +62,8 @@ runs:
         RH_COMMENT: ${{ inputs.comment }}
         RH_REPO: ${{ github.repository }}
         REDHERRING_CACHE: ${{ runner.temp }}/redherring-cache/cache.sqlite
+        # Keep what logs say, not the logs themselves: a much smaller cache to carry between runs.
+        REDHERRING_KEEP_LOGS: "0"
       run: |
         set -uo pipefail
         rh() { uvx --quiet --from "$GITHUB_ACTION_PATH" redherring "$@"; }
@@ -71,10 +73,10 @@ runs:
         if [ "$RH_COMMENT" = "true" ]; then why_comment=(--comment); fi
         case "$RH_COMMAND" in
           why)
-            rh why "$RH_RUN_ID" --repo "$RH_REPO" --days "$RH_DAYS" ${why_ledger[@]+"${why_ledger[@]}"} --format json -q > "$RUNNER_TEMP/redherring.json"
+            # One pass: the Markdown goes to the job summary, the JSON to a file for the output.
+            rh why "$RH_RUN_ID" --repo "$RH_REPO" --days "$RH_DAYS" ${why_ledger[@]+"${why_ledger[@]}"} ${why_comment[@]+"${why_comment[@]}"} --format md --json-out "$RUNNER_TEMP/redherring.json" -q >> "$GITHUB_STEP_SUMMARY"
             code=$?
             if [ "$code" -eq 2 ]; then exit 2; fi
-            rh why "$RH_RUN_ID" --repo "$RH_REPO" --days "$RH_DAYS" ${why_ledger[@]+"${why_ledger[@]}"} ${why_comment[@]+"${why_comment[@]}"} --format md -q >> "$GITHUB_STEP_SUMMARY"
             rec=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['recommendation'])" "$RUNNER_TEMP/redherring.json")
             echo "recommendation=$rec" >> "$GITHUB_OUTPUT"
             echo "redherring: $rec"

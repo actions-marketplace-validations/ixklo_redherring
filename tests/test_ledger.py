@@ -97,7 +97,11 @@ def test_cli_scan_writes_and_grows_the_ledger(tmp_path, monkeypatch, capsys):
     history(fake)
     monkeypatch.setattr(cli, "resolve_token", lambda: "t")
     monkeypatch.setattr(
-        cli, "GitHub", lambda token, on_wait=None: GitHub(token, transport=fake.transport())
+        cli,
+        "GitHub",
+        lambda token, on_wait=None, http_cache=None: GitHub(
+            token, transport=fake.transport(), http_cache=http_cache
+        ),
     )
     monkeypatch.setattr("redherring.scan.datetime", _Frozen)
     path = tmp_path / "flakes.json"

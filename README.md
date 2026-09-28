@@ -137,7 +137,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.1.2
+      - uses: ixklo/redherring@v0.2.0
         with:
           comment: true
 ```
@@ -155,7 +155,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.1.2
+      - uses: ixklo/redherring@v0.2.0
         with:
           command: scan
           days: "30"
@@ -181,7 +181,7 @@ The file is small JSON (one entry per failed job: test names, cause, commit, OS,
           path: flake-ledger.json
           key: redherring-ledger-${{ github.run_id }}
           restore-keys: redherring-ledger-
-      - uses: ixklo/redherring@v0.1.2
+      - uses: ixklo/redherring@v0.2.0
         with:
           command: scan
           ledger: flake-ledger.json
@@ -217,13 +217,13 @@ Missing yours? A parser is one function and a test with a real log excerpt. See 
 
 - **History has an expiry date.** Job logs are kept for 90 days by default, and [from 1 October 2026](https://github.blog/changelog/2026-08-27-actions-retention-will-cover-checks-workflow-runs-and-statuses/) GitHub deletes the workflow runs themselves once they pass the repo's log retention period (90 days by default, and at most 90 days for public repos). `--days` beyond that finds nothing; use a [ledger](#keep-your-flake-history-the-ledger) to keep what was found.
 - **Only re-runs count.** Repos that never press re-run, or retry inside the job without reporting it, show fewer flakes than they have. Playwright, nextest and pytest-rerunfailures retries are recognised when they appear in a failed job's log.
-- **Big repos cost API requests.** A busy monorepo can take a few thousand requests for 30 days. redherring waits out rate limits on its own, and caches everything immutable (attempt job lists, logs) so later runs only fetch what's new.
+- **The first scan of a big repo costs API requests.** A busy monorepo can take a few thousand for 30 days (GitHub allows 5,000 an hour). redherring waits out rate limits on its own, and **later scans are cheap**: it remembers what each log said, and asks GitHub "has this page changed?" before re-downloading. GitHub answers unchanged pages with a free 304. On astral-sh/uv, a repeat 7-day scan took 4 requests instead of 169.
 - **Some jobs stay "unknown".** In a study of 122 popular repos, nearly half of the red-herring jobs (46%) named neither a test nor a known infrastructure cause. Some logs genuinely say nothing ("exit 1"); others use output formats redherring doesn't parse yet. `why` treats those as "unclear", never as safe to re-run. Parser contributions fix this one format at a time.
 - **GitHub Actions only**, for now.
 
 ## Privacy
 
-redherring runs on your machine (or in your own Actions runner) and talks only to the GitHub API. Downloaded logs are cached, compressed, in your user cache folder (`%LOCALAPPDATA%\redherring`, `~/Library/Caches/redherring`, or `~/.cache/redherring`; override with `REDHERRING_CACHE`). Nothing is sent anywhere else.
+redherring runs on your machine (or in your own Actions runner) and talks only to the GitHub API. It caches what it downloads in your user cache folder (`%LOCALAPPDATA%\redherring`, `~/Library/Caches/redherring`, or `~/.cache/redherring`; override with `REDHERRING_CACHE`). The cache holds job lists, what each log said, and API pages with their ETags, plus compressed copies of the logs so improved parsers can re-read them without downloading again. Logs are pruned after 120 days (GitHub deletes its own after 90). Set `REDHERRING_KEEP_LOGS=0` to keep only what the logs said; the GitHub Action does this. Nothing is sent anywhere else.
 
 ## License
 

@@ -7,12 +7,14 @@ import contextlib
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from rich.console import Console
 
 from . import __version__, ledger
 from .cache import Cache
+from .comment import post_or_update
 from .github import GitHub, GitHubError, resolve_token
 from .render import dumps, print_scan, print_why, scan_json, scan_markdown, why_json, why_markdown
 from .scan import Scanner
@@ -94,6 +96,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--format", choices=("text", "md", "json"), default="text")
+    p.add_argument("--json-out", help="also write the JSON result to this file")
     p.add_argument("--cache", help="cache file (default: your user cache folder)")
     p.add_argument("--quiet", "-q", action="store_true", help="no progress messages")
 
@@ -125,16 +128,21 @@ def main(argv: list[str] | None = None) -> int:
     def on_wait(reason: str, seconds: float) -> None:
         err.print(f"[yellow]{reason}; waiting {seconds:.0f}s[/yellow]")
 
-    gh = GitHub(token, on_wait=on_wait)
     cache = Cache(args.cache)
+    gh = GitHub(token, on_wait=on_wait, http_cache=cache)
     scanner = Scanner(gh, cache, progress=progress)
+
+    def stop() -> None:
+        if status is not None:
+            status.stop()
+
     try:
         if show_progress:
             status = err.status("[dim]starting[/dim]")
             status.start()
         if args.command == "scan":
-            return _scan(args, gh, scanner, out, err, lambda: status and status.stop())
-        return _why(args, scanner, out, err, lambda: status and status.stop())
+            return _scan(args, gh, scanner, out, stop)
+        return _why(args, scanner, out, err, stop)
     except (GitHubError, ValueError) as e:
         if status is not None:
             status.stop()
@@ -145,13 +153,19 @@ def main(argv: list[str] | None = None) -> int:
             status.stop()
         return 130
     finally:
-        if status is not None:
-            status.stop()
+        stop()
         gh.close()
+        with contextlib.suppress(Exception):
+            cache.prune()
         cache.close()
 
 
-def _scan(args, gh: GitHub, scanner: Scanner, out: Console, err: Console, stop) -> int:
+def _write_json_out(args, data: dict) -> None:
+    if args.json_out:
+        Path(args.json_out).write_text(dumps(data) + "\n", encoding="utf-8")
+
+
+def _scan(args, gh: GitHub, scanner: Scanner, out: Console, stop: Callable[[], None]) -> int:
     repo = normalize_repo(args.repo) if args.repo else repo_from_git()
     if not repo:
         raise ValueError(
@@ -169,6 +183,7 @@ def _scan(args, gh: GitHub, scanner: Scanner, out: Console, err: Console, stop) 
         merged = ledger.merge(prior, result.failed_jobs, keep_days=args.keep_days)
         ledger.save(ledger_path, repo, merged)
     stop()
+    _write_json_out(args, scan_json(result))
     if args.format == "json":
         print(dumps(scan_json(result)))
     elif args.format == "md":
@@ -178,7 +193,7 @@ def _scan(args, gh: GitHub, scanner: Scanner, out: Console, err: Console, stop) 
     return EXIT_OK
 
 
-def _why(args, scanner: Scanner, out: Console, err: Console, stop) -> int:
+def _why(args, scanner: Scanner, out: Console, err: Console, stop: Callable[[], None]) -> int:
     repo_arg = normalize_repo(args.repo) if args.repo else repo_from_git()
     repo, run_id, attempt = parse_target(args.run, repo_arg)
     prior = ledger.load(Path(args.ledger), repo) if args.ledger else []
@@ -192,6 +207,7 @@ def _why(args, scanner: Scanner, out: Console, err: Console, stop) -> int:
         prior=prior,
     )
     stop()
+    _write_json_out(args, why_json(e))
     if args.format == "json":
         print(dumps(why_json(e)))
     elif args.format == "md":
@@ -199,8 +215,6 @@ def _why(args, scanner: Scanner, out: Console, err: Console, stop) -> int:
     else:
         print_why(e, out)
     if args.comment:
-        from .comment import post_or_update
-
         for url in post_or_update(scanner.gh, e):
             err.print(f"[dim]commented: {url}[/dim]")
     rec = e.recommendation

@@ -5,11 +5,13 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import threading
 import time
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Protocol
+from urllib.parse import urlencode
 
 import httpx
 
@@ -26,6 +28,14 @@ _MAX_LIMIT_WAITS = 50
 
 class GitHubError(RuntimeError):
     pass
+
+
+class ResponseCache(Protocol):
+    """Where ETag-validated responses live (the SQLite cache implements it)."""
+
+    def get_http(self, key: str) -> tuple[str, Any] | None: ...
+
+    def put_http(self, key: str, etag: str, body: Any) -> None: ...
 
 
 class LogGone(GitHubError):
@@ -66,6 +76,7 @@ class GitHub:
         transport: httpx.BaseTransport | None = None,
         on_wait: Callable[[str, float], None] | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        http_cache: ResponseCache | None = None,
     ) -> None:
         headers = {
             "Accept": "application/vnd.github+json",
@@ -83,9 +94,13 @@ class GitHub:
             follow_redirects=True,
             transport=transport,
         )
-        self._on_wait = on_wait or (lambda reason, seconds: None)
+        self._on_wait = on_wait or (lambda _reason, _seconds: None)
         self._sleep = sleep
+        self._http_cache = http_cache
+        self._counter = threading.Lock()
+        # Requests that count against the rate limit, and 304s that don't.
         self.requests = 0
+        self.free_requests = 0
 
     def close(self) -> None:
         self._http.close()
@@ -99,19 +114,24 @@ class GitHub:
         *,
         method: str = "GET",
         body: Any = None,
+        headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         attempt = 0
         limited = 0
         while True:
             try:
-                resp = self._http.request(method, path, params=params, json=body)
+                resp = self._http.request(method, path, params=params, json=body, headers=headers)
             except httpx.TransportError as e:
                 if attempt == 5:
                     raise GitHubError(f"network error talking to GitHub: {e}") from e
                 self._sleep(2**attempt)
                 attempt += 1
                 continue
-            self.requests += 1
+            with self._counter:
+                if resp.status_code == 304:
+                    self.free_requests += 1
+                else:
+                    self.requests += 1
             # Rate limits are waited out, not counted as failures: a big scan can span hours.
             if (
                 resp.status_code in (403, 429)
@@ -145,7 +165,13 @@ class GitHub:
         return False
 
     def get(self, path: str, params: dict[str, Any] | None = None) -> Any:
-        resp = self._request(path, params)
+        key = f"{path}?{urlencode(sorted((params or {}).items()))}"
+        cached = self._http_cache.get_http(key) if self._http_cache else None
+        headers = {"If-None-Match": cached[0]} if cached else None
+        resp = self._request(path, params, headers=headers)
+        if resp.status_code == 304 and cached:
+            # Unchanged since last time, and free: 304s don't count against the rate limit.
+            return cached[1]
         if resp.status_code == 404:
             raise GitHubError(
                 f"not found: {path} (is the repo name right, and can your token see it?)"
@@ -156,7 +182,10 @@ class GitHub:
             )
         if resp.status_code >= 400:
             raise GitHubError(f"GitHub returned {resp.status_code} for {path}: {resp.text[:200]}")
-        return resp.json()
+        data = resp.json()
+        if self._http_cache and (etag := resp.headers.get("etag")):
+            self._http_cache.put_http(key, etag, data)
+        return data
 
     def paginate(self, path: str, key: str, params: dict[str, Any] | None = None) -> Iterator[dict]:
         params = dict(params or {}, per_page=100)
@@ -217,10 +246,14 @@ class GitHub:
         if status:
             params["status"] = status
         path = self.runs_path(repo, workflow_id)
+        # Calendar days (UTC): every full day's query is the same from one scan to the next, so
+        # an unchanged page comes back as a free 304.
         days = []
-        start = since
+        start = since.astimezone(UTC)
+        until = until.astimezone(UTC)
         while start < until:
-            end = min(until, start + timedelta(days=1))
+            midnight = start.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+            end = min(until, midnight)
             days.append((start, end))
             start = end
         if len(days) == 1:
@@ -260,8 +293,11 @@ class GitHub:
         # total_count stops at 2500; count the halves separately when it might be capped.
         if total >= _COUNT_CAP and until - since > _MIN_WINDOW:
             mid = since + (until - since) / 2
-            kw = {"status": status, "workflow_id": workflow_id, "extra": extra}
-            return self.count_runs(repo, since, mid, **kw) + self.count_runs(repo, mid, until, **kw)
+            return self.count_runs(
+                repo, since, mid, status=status, workflow_id=workflow_id, extra=extra
+            ) + self.count_runs(
+                repo, mid, until, status=status, workflow_id=workflow_id, extra=extra
+            )
         return total
 
     def workflows(self, repo: str) -> list[dict]:

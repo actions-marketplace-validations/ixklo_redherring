@@ -10,12 +10,14 @@ PR change (not flakiness at all), or unknown.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections import Counter, defaultdict
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from .cache import Cache
 from .github import GitHub, LogGone, parse_time
@@ -135,6 +137,8 @@ class ScanResult:
     tests: list[TestStat] = field(default_factory=list)
     red_seconds: list[float] = field(default_factory=list)
     api_requests: int = 0
+    # Answered "unchanged" (304): free, not counted against the rate limit.
+    api_free: int = 0
     # Older evidence from a ledger, outside this scan's window: feeds the flaky tables only.
     history_jobs: list[FailedJob] = field(default_factory=list)
 
@@ -225,6 +229,39 @@ _SUMMARY_OUTPUT = re.compile(
 )
 
 
+def _parser_version() -> str:
+    """Fingerprint of the code that reads logs: cached readings are redone when it changes."""
+    here = Path(__file__).resolve().parent
+    digest = hashlib.sha256()
+    for name in ("logtext.py", "parsers.py", "infra.py", "scan.py"):
+        digest.update((here / name).read_bytes())
+    return digest.hexdigest()[:16]
+
+
+PARSER_VERSION = _parser_version()
+
+Reading = tuple[str, list[TestFailure], "InfraCause | None", str]
+
+
+def reading_to_json(r: Reading) -> dict:
+    kind, tests, infra, hint = r
+    return {
+        "kind": kind,
+        "tests": [[t.framework, t.test_id, t.outcome, t.message] for t in tests],
+        "infra": [infra.category, infra.evidence] if infra else None,
+        "hint": hint,
+    }
+
+
+def reading_from_json(d: dict) -> Reading:
+    return (
+        d["kind"],
+        [TestFailure(*t) for t in d["tests"]],
+        InfraCause(*d["infra"]) if d["infra"] else None,
+        d["hint"],
+    )
+
+
 def explain_log(text: str) -> tuple[str, list[TestFailure], InfraCause | None, str]:
     """(kind, tests, infra cause, hint) for one failed job's log."""
     lines = clean_lines(text)
@@ -272,29 +309,43 @@ class Scanner:
             self.cache.put_attempt_jobs(repo, run_id, attempt, jobs)
         return jobs
 
-    def logs(self, repo: str, job_ids: list[int]) -> dict[int, str | None]:
-        """Log text per job id (None when expired), downloading what isn't cached."""
-        out: dict[int, str | None] = {}
-        missing = []
-        for jid in job_ids:
-            hit = self.cache.get_log(repo, jid)
-            if hit is None:
-                missing.append(jid)
+    def readings(self, repo: str, job_ids: list[int]) -> dict[int, Reading | None]:
+        """What each job's log says (None when the log has expired).
+
+        Each log is parsed as soon as it's read or downloaded and only the reading is kept, so
+        memory stays flat however many logs a scan needs. Readings are cached per parser
+        version, so re-scans don't re-read logs at all.
+        """
+        out: dict[int, Reading | None] = {}
+        todo = []
+        for jid in dict.fromkeys(job_ids):
+            if (cached := self.cache.get_reading(repo, jid, PARSER_VERSION)) is not None:
+                out[jid] = reading_from_json(cached)
             else:
-                out[jid] = hit[1] if hit[0] == "ok" else None
+                todo.append(jid)
 
-        def fetch(jid: int) -> tuple[int, str | None]:
-            try:
-                return jid, self.gh.job_log(repo, jid)
-            except LogGone:
+        def read(jid: int) -> tuple[int, Reading | None]:
+            hit = self.cache.get_log(repo, jid)
+            if hit is not None and hit[0] == "gone":
                 return jid, None
+            if hit is not None and hit[1] is not None:
+                text = hit[1]
+            else:
+                try:
+                    text = self.gh.job_log(repo, jid)
+                except LogGone:
+                    self.cache.put_log(repo, jid, None)
+                    return jid, None
+                self.cache.put_log(repo, jid, text)
+            reading = explain_log(text)
+            self.cache.put_reading(repo, jid, PARSER_VERSION, reading_to_json(reading))
+            return jid, reading
 
-        if missing:
-            self.progress(f"downloading {len(missing)} job logs")
+        if todo:
+            self.progress(f"reading {len(todo)} job logs")
             with ThreadPoolExecutor(self.workers) as pool:
-                for jid, text in pool.map(fetch, missing):
-                    self.cache.put_log(repo, jid, text)
-                    out[jid] = text
+                for jid, reading in pool.map(read, todo):
+                    out[jid] = reading
         return out
 
     # -- the scan ------------------------------------------------------------------------
@@ -312,7 +363,7 @@ class Scanner:
         until = until or datetime.now(UTC)
         since = until - timedelta(days=days)
         result = ScanResult(repo=repo, since=since, until=until)
-        start_requests = self.gh.requests
+        start_requests, start_free = self.gh.requests, self.gh.free_requests
         extra = {"branch": branch} if branch else {}
 
         seen = [0]
@@ -379,23 +430,29 @@ class Scanner:
                     )
                 )
 
-        texts = self.logs(repo, [f.job_id for f in failed])
+        # A roll-up job recognisable by its name only repeats that another job failed: its
+        # log isn't worth a download (next.js has hundreds a fortnight).
+        to_read = []
         for f in failed:
-            text = texts.get(f.job_id)
-            if text is None:
+            if is_summary_job(f.job_name):
+                f.kind = KIND_SUMMARY
+            else:
+                to_read.append(f)
+        found = self.readings(repo, [f.job_id for f in to_read])
+        for f in to_read:
+            reading = found.get(f.job_id)
+            if reading is None:
                 f.kind = KIND_EXPIRED
                 continue
-            f.kind, f.tests, f.infra, f.hint = explain_log(text)
+            f.kind, f.tests, f.infra, f.hint = reading
             f.kind = refine_kind(f)
         result.failed_jobs = failed
 
+        herring_runs = {j.run_id for j in failed if j.kind not in (KIND_GATE, KIND_SUMMARY)}
         for run in recovered:
             first_end = attempt_end.get((run["id"], 1))
             done = parse_time(run.get("updated_at"))
-            herring = any(
-                j.run_id == run["id"] and j.kind not in (KIND_GATE, KIND_SUMMARY) for j in failed
-            )
-            if first_end and done and herring:
+            if first_end and done and run["id"] in herring_runs:
                 result.red_seconds.append(max(0.0, (done - first_end).total_seconds()))
 
         if prior:
@@ -408,6 +465,7 @@ class Scanner:
             ]
         result.tests = aggregate_tests(failed + result.history_jobs)
         result.api_requests = self.gh.requests - start_requests
+        result.api_free = self.gh.free_requests - start_free
         return result
 
 

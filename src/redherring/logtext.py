@@ -27,10 +27,3 @@ def clean_lines(text: str) -> list[str]:
             line = line.rsplit("\r", 1)[-1]
         out.append(line)
     return out
-
-
-def tail_excerpt(lines: list[str], index: int, before: int = 2, after: int = 6) -> str:
-    """A short excerpt around a line, for evidence in reports."""
-    lo = max(0, index - before)
-    hi = min(len(lines), index + after + 1)
-    return "\n".join(line.rstrip() for line in lines[lo:hi]).strip()

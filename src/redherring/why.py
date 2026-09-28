@@ -20,7 +20,6 @@ from .scan import (
     Scanner,
     ScanResult,
     TestStat,
-    explain_log,
     is_summary_job,
     refine_kind,
     runner_os,
@@ -149,7 +148,7 @@ def explain(
     # Roll-up jobs only repeat that something else failed; drop them when anything else did.
     if any(not is_summary_job(j.get("name") or "") for j in failed):
         failed = [j for j in failed if not is_summary_job(j.get("name") or "")]
-    texts = scanner.logs(repo, [j["id"] for j in failed])
+    found = scanner.readings(repo, [j["id"] for j in failed])
 
     main_failing: dict[str, str] = {}
     if check_main:
@@ -185,15 +184,15 @@ def explain(
             recovered_at=None,
             failed_step=j.get("failed_step") or "",
         )
-        text = texts.get(j["id"])
-        if text is None:
+        reading = found.get(j["id"])
+        if reading is None:
             out.findings.append(
                 Finding(
                     LOG_EXPIRED, None, fj.job_name, fj.url, "the job log is no longer available"
                 )
             )
             continue
-        fj.kind, fj.tests, fj.infra, fj.hint = explain_log(text)
+        fj.kind, fj.tests, fj.infra, fj.hint = reading
         fj.kind = refine_kind(fj)
         if fj.kind in (KIND_TESTS, KIND_MASS):
             for t in fj.tests:
@@ -357,13 +356,12 @@ def _failed_in_earlier_attempts(
             for j in earlier
             if j.get("conclusion") in FAILED_CONCLUSIONS and not is_summary_job(j.get("name") or "")
         ]
-        texts = scanner.logs(repo, [j["id"] for j in failed])
+        found = scanner.readings(repo, [j["id"] for j in failed])
         for j in failed:
             jobs.setdefault(j.get("name") or "", []).append(k)
-            if (text := texts.get(j["id"])) is None:
+            if (reading := found.get(j["id"])) is None:
                 continue
-            _, found, _, _ = explain_log(text)
-            for t in found:
+            for t in reading[1]:
                 if t.outcome != FLAKY:
                     tests.setdefault(t.test_id, []).append(k)
     return tests, jobs
@@ -402,12 +400,11 @@ def _failing_on_default_branch(
     latest = earlier[0]
     jobs = scanner.attempt_jobs(repo, latest["id"], latest.get("run_attempt") or 1)
     failed = [j for j in jobs if j.get("conclusion") in FAILED_CONCLUSIONS]
-    texts = scanner.logs(repo, [j["id"] for j in failed])
+    found = scanner.readings(repo, [j["id"] for j in failed])
     out: dict[str, str] = {}
     for j in failed:
-        if (text := texts.get(j["id"])) is None:
+        if (reading := found.get(j["id"])) is None:
             continue
-        _, tests, _, _ = explain_log(text)
-        for t in tests:
+        for t in reading[1]:
             out.setdefault(t.test_id, latest.get("html_url") or "")
     return out, branch

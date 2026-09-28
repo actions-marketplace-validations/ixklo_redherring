@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.2.0 (2026-09-28)
+
+Lighter and much cheaper on big repos, from a code review:
+
+- **Repeat scans are nearly free.** API pages are kept with their ETag and re-validated. GitHub answers
+  unchanged pages with a 304, which doesn't count against the rate limit. Run listings use calendar
+  days, so past days' queries repeat exactly. On astral-sh/uv, a repeat 7-day scan used 4 requests
+  instead of 169, and 9 seconds instead of 51. Output shows free requests separately.
+- **Memory stays flat.** Each log is parsed as it arrives and only what it says is kept. Before, a scan
+  held every downloaded log in memory at once.
+- **What each log says is cached per parser version**, so re-scans don't re-read logs, and a new version
+  of the parsers re-reads them automatically (from the cache, without downloading).
+- **Roll-up jobs recognisable by name aren't downloaded** (next.js alone had 314 in two weeks).
+- **The cache is pruned:** logs after 120 days (GitHub's own retention is 90), stale API pages after 30.
+  `REDHERRING_KEEP_LOGS=0` keeps only what logs said: a much smaller cache.
+- **The GitHub Action runs once per failure** instead of twice (`--json-out` writes the JSON next to the
+  Markdown), and carries a smaller cache between runs. CI now smoke-tests `why` through the Action too.
+- `--json-out FILE` on `scan` and `why`. Old caches are migrated automatically.
+- Housekeeping: thread-safe request counters, a slow loop on repos with many re-runs, dead code, type
+  hints (mypy is clean), and tests for the terminal and Markdown output.
+
 ## 0.1.2 (2026-09-28)
 
 Safer verdicts, from a code review:

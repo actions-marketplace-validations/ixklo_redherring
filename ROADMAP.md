@@ -11,7 +11,13 @@ LLM required.
 - Flake ledger that outlives GitHub's run retention
 - A skill for coding agents
 
-## Next (0.2)
+## Done in 0.2
+
+- Safer verdicts (0.1.2): failing again on the same commit means real; one past flake is only
+  "probably flaky"; untrusted text is rendered as data.
+- Cheap repeat scans (ETag / free 304s), flat memory, cached readings, pruned cache, one-pass Action.
+
+## Next (0.3)
 
 - **Hidden flakes.** Tests that runners retry inside a *green* job (Playwright `flaky`, nextest `FLAKY`,
   pytest `RERUN`) never make a run red, so they're invisible today. Sample green logs to find them.

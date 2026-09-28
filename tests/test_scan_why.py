@@ -253,7 +253,11 @@ def test_cli_scan_json_and_why_exit_codes(monkeypatch, capsys):
 
     monkeypatch.setattr(cli, "resolve_token", lambda: "t0ken")
     monkeypatch.setattr(
-        cli, "GitHub", lambda token, on_wait=None: GitHub(token, transport=fake.transport())
+        cli,
+        "GitHub",
+        lambda token, on_wait=None, http_cache=None: GitHub(
+            token, transport=fake.transport(), http_cache=http_cache
+        ),
     )
 
     assert cli.main(["scan", REPO, "--format", "json", "--cache", ":memory:", "-q"]) == 0

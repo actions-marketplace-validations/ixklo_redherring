@@ -16,7 +16,7 @@ jobs:
           path: flake-ledger.json
           key: redherring-ledger-${{ github.run_id }}
           restore-keys: redherring-ledger-
-      - uses: ixklo/redherring@v0.1.2
+      - uses: ixklo/redherring@v0.2.0
         with:
           command: scan
           days: "30"
