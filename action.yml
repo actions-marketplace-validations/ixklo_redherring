@@ -22,7 +22,7 @@ inputs:
     description: "`why` only: fail this step when a failure looks real."
     default: "false"
   github-token:
-    description: Token with `actions: read` on the repository.
+    description: "Token with `actions: read` on the repository."
     default: ${{ github.token }}
 
 outputs:
