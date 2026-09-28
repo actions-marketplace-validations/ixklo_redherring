@@ -21,6 +21,9 @@ inputs:
   ledger:
     description: "Optional path to a flake ledger JSON file. `scan` merges new evidence into it; `why` reads it if present."
     default: ""
+  comment:
+    description: "`why` only: also post the explanation on the run's open PR (one comment, updated in place). Needs `pull-requests: write`."
+    default: "false"
   fail-on-real:
     description: "`why` only: fail this step when a failure looks real."
     default: "false"
@@ -47,18 +50,21 @@ runs:
         RH_WORKFLOW: ${{ inputs.workflow }}
         RH_FAIL_ON_REAL: ${{ inputs.fail-on-real }}
         RH_LEDGER: ${{ inputs.ledger }}
+        RH_COMMENT: ${{ inputs.comment }}
         RH_REPO: ${{ github.repository }}
       run: |
         set -uo pipefail
         rh() { uvx --quiet --from "$GITHUB_ACTION_PATH" redherring "$@"; }
         why_ledger=()
         if [ -n "$RH_LEDGER" ] && [ -f "$RH_LEDGER" ]; then why_ledger=(--ledger "$RH_LEDGER"); fi
+        why_comment=()
+        if [ "$RH_COMMENT" = "true" ]; then why_comment=(--comment); fi
         case "$RH_COMMAND" in
           why)
             rh why "$RH_RUN_ID" --repo "$RH_REPO" --days "$RH_DAYS" ${why_ledger[@]+"${why_ledger[@]}"} --format json -q > "$RUNNER_TEMP/redherring.json"
             code=$?
             if [ "$code" -eq 2 ]; then exit 2; fi
-            rh why "$RH_RUN_ID" --repo "$RH_REPO" --days "$RH_DAYS" ${why_ledger[@]+"${why_ledger[@]}"} --format md -q >> "$GITHUB_STEP_SUMMARY"
+            rh why "$RH_RUN_ID" --repo "$RH_REPO" --days "$RH_DAYS" ${why_ledger[@]+"${why_ledger[@]}"} ${why_comment[@]+"${why_comment[@]}"} --format md -q >> "$GITHUB_STEP_SUMMARY"
             rec=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['recommendation'])" "$RUNNER_TEMP/redherring.json")
             echo "recommendation=$rec" >> "$GITHUB_OUTPUT"
             echo "redherring: $rec"

@@ -30,6 +30,11 @@ class Fake:
     # Queue of (status, headers) to return before real answers, for rate-limit tests.
     interrupts: list[tuple[int, dict]] = field(default_factory=list)
     cap_total: int | None = None
+    # sha -> PRs ({"number", "state"}) for /commits/{sha}/pulls
+    pulls_by_sha: dict[str, list[dict]] = field(default_factory=dict)
+    # PR number -> issue comments
+    comments: dict[int, list[dict]] = field(default_factory=dict)
+    writes: list[tuple[str, str, dict]] = field(default_factory=list)
 
     def run(
         self,
@@ -60,6 +65,7 @@ class Fake:
             "updated_at": ts(updated or created),
             "run_number": id,
             "html_url": f"https://github.com/{REPO}/actions/runs/{id}",
+            "pull_requests": [],
         }
         self.runs.append(r)
         return r
@@ -125,6 +131,31 @@ class Fake:
             if text is None:
                 return httpx.Response(410, text="Gone")
             return httpx.Response(200, text=text)
+        if m := re.fullmatch(rf"/repos/{REPO}/commits/(\w+)/pulls", path):
+            return _json(self.pulls_by_sha.get(m[1], []))
+        if m := re.fullmatch(rf"/repos/{REPO}/issues/(\d+)/comments", path):
+            number = int(m[1])
+            if request.method == "POST":
+                body = json.loads(request.content)
+                self.writes.append(("POST", path, body))
+                new_id = 9000 + sum(len(v) for v in self.comments.values())
+                c = {
+                    "id": new_id,
+                    "body": body["body"],
+                    "html_url": f"https://github.com/{REPO}/pull/{number}#c{new_id}",
+                }
+                self.comments.setdefault(number, []).append(c)
+                return _json(c)
+            return _json(self.comments.get(number, []))
+        if m := re.fullmatch(rf"/repos/{REPO}/issues/comments/(\d+)", path):
+            body = json.loads(request.content)
+            self.writes.append((request.method, path, body))
+            for cs in self.comments.values():
+                for c in cs:
+                    if c["id"] == int(m[1]):
+                        c["body"] = body["body"]
+                        return _json(c)
+            return httpx.Response(404, json={"message": "Not Found"})
         if path == f"/repos/{REPO}/actions/workflows":
             return _json(
                 {

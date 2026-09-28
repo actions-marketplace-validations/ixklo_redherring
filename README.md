@@ -80,7 +80,7 @@ Before changing code because CI failed, run `redherring why <run-url> --format j
 
 ## GitHub Action
 
-Explain every failed CI run in its job summary:
+Explain every failed CI run, in its job summary and as a comment on the pull request:
 
 ```yaml
 # .github/workflows/redherring.yml
@@ -92,13 +92,18 @@ on:
 permissions:
   actions: read
   contents: read
+  pull-requests: write      # only needed for comment: true
 jobs:
   why:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     steps:
       - uses: ixklo/redherring@v0.1.0
+        with:
+          comment: true
 ```
+
+The comment is posted once per PR and workflow, then edited in place on later failures, never duplicated.
 
 Or post a weekly flaky-test report:
 
@@ -117,7 +122,7 @@ jobs:
           days: "30"
 ```
 
-Inputs: `command` (`why` or `scan`), `run-id`, `days`, `workflow`, `ledger`, `fail-on-real`, `github-token`. Output: `recommendation`.
+Inputs: `command` (`why` or `scan`), `run-id`, `days`, `workflow`, `ledger`, `comment`, `fail-on-real`, `github-token`. Output: `recommendation`. From the command line, the same comment is `redherring why <run> --comment`.
 
 ## Keep your flake history: the ledger
 

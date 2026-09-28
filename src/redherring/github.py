@@ -86,10 +86,17 @@ class GitHub:
 
     # -- plumbing ------------------------------------------------------------------------
 
-    def _request(self, path: str, params: dict[str, Any] | None = None) -> httpx.Response:
+    def _request(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        *,
+        method: str = "GET",
+        body: Any = None,
+    ) -> httpx.Response:
         for attempt in range(6):
             try:
-                resp = self._http.get(path, params=params)
+                resp = self._http.request(method, path, params=params, json=body)
             except httpx.TransportError as e:
                 if attempt == 5:
                     raise GitHubError(f"network error talking to GitHub: {e}") from e
@@ -98,7 +105,8 @@ class GitHub:
             self.requests += 1
             if resp.status_code in (403, 429) and self._rate_limited(resp):
                 continue
-            if resp.status_code >= 500 and attempt < 5:
+            # Only reads are retried on server errors: a retried write could post twice.
+            if resp.status_code >= 500 and attempt < 5 and method == "GET":
                 self._sleep(2**attempt)
                 continue
             return resp
@@ -144,6 +152,19 @@ class GitHub:
             if len(items) < 100:
                 return
             page += 1
+
+    def write(self, method: str, path: str, body: dict[str, Any]) -> Any:
+        resp = self._request(path, method=method, body=body)
+        if resp.status_code in (403, 404):
+            raise GitHubError(
+                f"GitHub refused {method} {path} ({resp.status_code}). Posting PR comments needs a "
+                "token with `pull-requests: write`."
+            )
+        if resp.status_code >= 400:
+            raise GitHubError(
+                f"GitHub returned {resp.status_code} for {method} {path}: {resp.text[:200]}"
+            )
+        return resp.json()
 
     # -- endpoints -----------------------------------------------------------------------
 
@@ -225,6 +246,29 @@ class GitHub:
             yield from batch
             if on_page:
                 on_page(len(batch))
+            page += 1
+
+    def open_pulls_for_run(self, repo: str, run: dict) -> list[int]:
+        """Open PRs a run belongs to. Fork PRs aren't listed on the run, so ask by commit."""
+        numbers = [p["number"] for p in run.get("pull_requests") or []]
+        if numbers:
+            return numbers
+        try:
+            pulls = self.get(f"/repos/{repo}/commits/{run.get('head_sha')}/pulls")
+        except GitHubError:
+            return []
+        return [p["number"] for p in pulls if p.get("state") == "open"]
+
+    def issue_comments(self, repo: str, number: int) -> list[dict]:
+        out: list[dict] = []
+        page = 1
+        while True:
+            batch = self.get(
+                f"/repos/{repo}/issues/{number}/comments", {"per_page": 100, "page": page}
+            )
+            out += batch
+            if len(batch) < 100:
+                return out
             page += 1
 
     def job_log(self, repo: str, job_id: int) -> str:

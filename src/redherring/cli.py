@@ -83,6 +83,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-main-check", action="store_true", help="don't look at the default branch's latest run"
     )
     w.add_argument("--ledger", help="a ledger written by `scan --ledger`, used as extra history")
+    w.add_argument(
+        "--comment",
+        action="store_true",
+        help="post (or update) the explanation as a comment on the run's open pull request",
+    )
     _common(w)
     return p
 
@@ -193,6 +198,11 @@ def _why(args, scanner: Scanner, out: Console, err: Console, stop) -> int:
         print(why_markdown(e))
     else:
         print_why(e, out)
+    if args.comment:
+        from .comment import post_or_update
+
+        for url in post_or_update(scanner.gh, e):
+            err.print(f"[dim]commented: {url}[/dim]")
     rec = e.recommendation
     if rec in (RERUN, NOTHING):
         return EXIT_OK

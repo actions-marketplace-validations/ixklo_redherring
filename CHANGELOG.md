@@ -14,3 +14,6 @@ First version.
 - Infrastructure causes: network, package registry, rate limited, runner lost, job timeout, out of
   memory, disk full, service startup, GitHub service, AI provider.
 - Text, Markdown and JSON output; a composite GitHub Action; a local cache of immutable history.
+- `--ledger`: a JSON file of past evidence that outlives GitHub's run retention (from 1 Oct 2026 runs
+  are deleted after the log-retention period).
+- `why --comment` / Action `comment: true`: one PR comment per workflow, edited in place.
