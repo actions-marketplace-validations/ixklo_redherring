@@ -40,7 +40,7 @@ MASS_FAILURE = 10
 # linking an issue is not flakiness.
 _GATE_NAME = re.compile(
     r"label|precondition|issue[-_ ]?link|pr[-_ ]?title|semantic|\bcla\b|\bdco\b|changelog|triage"
-    r"|assign|approv|conventional|require|policy|enforce|welcome|milestone|ready[-_ ]for|draft",
+    r"|assign|approv|conventional|require|policy|enforce|welcome|milestone|ready[-_ ]for|draft|\bsize\b",
     re.I,
 )
 _GATE_EVENTS = {
@@ -54,7 +54,8 @@ _GATE_EVENTS = {
 # Roll-up jobs ("all required jobs passed") fail only because another job failed.
 _SUMMARY_NAME = re.compile(
     r"^(?:all[-_ ].*(?:pass|green|success|succeed|jobs|done|required|checks)\w*"
-    r"|.*alls?[-_]green.*|required[-_ ]checks?\b.*|ci[-_ ]?(?:success|ok|status|result|passed|complete)"
+    r"|.*alls?[-_]green.*|required[-_ ]checks?\b.*|required\b.*\bchecks?\b.*|status[-_ ]checks?\b.*"
+    r"|ci[-_ ]?(?:success|ok|status|result|passed|complete)"
     r"|.*\b(?:all|required) (?:jobs|checks) (?:passed|succeeded|completed?|green))\s*$",
     re.I,
 )
@@ -214,6 +215,7 @@ def failed_step(job: dict) -> str:
 # Output of roll-up actions such as re-actors/alls-green.
 _SUMMARY_OUTPUT = re.compile(
     r"\[required to succeed\]|Some of the required to succeed jobs failed|\[allowed to fail\]"
+    r"|^\s*- [\w./ -]+: (?:failure|failed|cancelled)\s*$|^Required checks failed"
 )
 
 

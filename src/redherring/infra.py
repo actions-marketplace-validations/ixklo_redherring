@@ -42,13 +42,16 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|OOMKilled|java\.lang\.OutOfMemoryError|exit code 137\b|^Killed\s*$|^MemoryError\b"
         ),
     ),
-    ("disk full", re.compile(r"No space left on device|\bENOSPC\b")),
+    (
+        "disk full",
+        re.compile(r"No space left on device|\bENOSPC\b|ResourceExhausted: failed to copy files"),
+    ),
     (
         "runner environment",
         re.compile(
             # 0xC0000142 STATUS_DLL_INIT_FAILED: Windows couldn't start the process at all.
             r"exited \(-1073741502\)|exit code -1073741502|0xC0000142|3221225794"
-            r"|bad interpreter: Text file busy"
+            r"|bad interpreter: Text file busy|Failed to start Firecracker VM"
         ),
     ),
     (
@@ -102,6 +105,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|\boperation timed out\b|Unexpected HTTP response: 5\d\d|Canceled because of SSL destruction"
             r"|The requested URL returned error: 5\d\d"
             r"|stream error: stream ID \d+; INTERNAL_ERROR|proxy\.golang\.org.*(?:EOF|reset|timeout)"
+            r"|HTTP Error 5\d\d: (?:Internal Server Error|Bad Gateway|Service Unavailable|Gateway Time-?out)"
             r"|'git', 'clone'.*returned non-zero exit status 128|RPC failed; curl|early EOF"
         ),
     ),
@@ -134,7 +138,7 @@ _NOT_A_HINT = re.compile(
     r"^\[?ELIFECYCLE\]? |^error Command failed with exit code|^npm (?:ERR!|error) (?:code|errno|path|command|A complete log)"
     r"|^DEBUG Command exited with code|^Error: Process completed with exit code|^make(?:\[\d+\])?: \*\*\*"
     r"|^warning: build failed, waiting for other jobs|^note: run with `RUST_BACKTRACE|^shell: |^env:$"
-    r"|^\+ set [+-]x|^Duration\b|HOW TO REPRODUCE"
+    r"|^\+ set [+-]x|^Duration\b|HOW TO REPRODUCE|^[A-Z][A-Z0-9_]{2,}: "
 )
 _LEADING_ERROR = re.compile(r"^(?:error|fatal|panic|FATAL|ERROR|Error)(?:\[[^\]]*\])?[:!]")
 _ERRORISH = re.compile(

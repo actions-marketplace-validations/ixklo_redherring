@@ -455,3 +455,42 @@ def test_testem_global_error_names_the_running_test():
     [f] = parse_failures(clean_lines(text))
     assert f.test_id == "Acceptance: User Card - Inactive user: it shows less"
     assert f.message.startswith("Uncaught TypeError")
+
+
+def test_status_check_rollups_are_summaries():
+    from redherring.scan import is_summary_job
+
+    assert is_summary_job("Status Check - Keycloak CI")
+    assert is_summary_job("Required PR Quality Checks")
+    assert not is_summary_job("Unit tests")
+    kind, *_ = explain_log(
+        "- e2e: failed\n- unit-test: failed\n##[error]Process completed with exit code 1.\n"
+    )
+    assert kind == "summary"
+
+
+@pytest.mark.parametrize(
+    "line,category",
+    [
+        (
+            "Failing on max retries. Error while downloading kind: HTTP Error 504: Gateway Time-out",
+            "network",
+        ),
+        (
+            "ERROR: failed to solve: ResourceExhausted: failed to copy files: failed to open target",
+            "disk full",
+        ),
+    ],
+)
+def test_study_signatures(line, category):
+    cause = classify([line, "##[error]Process completed with exit code 1."])
+    assert cause is not None and cause.category == category
+
+
+def test_env_block_is_not_a_hint():
+    lines = [
+        "real problem",
+        "  NODE_OPTIONS: --max-old-space-size=4096",
+        "##[error]Process completed with exit code 1.",
+    ]
+    assert last_output(lines) == "real problem"
