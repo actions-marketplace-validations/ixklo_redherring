@@ -5,7 +5,8 @@ Thanks for helping. The most useful contributions are small and concrete.
 ## Add or fix a test-runner parser
 
 This is the best first contribution. If redherring doesn't name the tests in your CI logs, it
-reports the job as `unknown` and you get less out of it.
+reports the job as `unknown` and you get less out of it. Not up for writing a parser? Run
+`redherring report <job-url>`: it drafts the issue with a cleaned-up log excerpt for you.
 
 1. Find a failed job in your repo and download its log (the job page → ⋯ → *Download log archive*,
    or `gh api repos/OWNER/REPO/actions/jobs/JOB_ID/logs`).
@@ -31,8 +32,8 @@ specific: "error" or "failed" would turn real failures into excuses.
 
 ## Report a wrong verdict
 
-Open an issue with the run URL (public repos) or the relevant log lines, what redherring said, and
-what was actually going on.
+Run `redherring report <job-url> --wrong`: it drafts the issue with what redherring said and the log
+lines, and you add what was actually going on. Or open the "Wrong verdict" issue form by hand.
 
 ## Development
 

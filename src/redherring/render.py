@@ -13,6 +13,9 @@ from rich.table import Table
 from rich.text import Text
 
 from . import __version__
+from .notes import FLAKY as MARKED_FLAKY
+from .notes import JOB, NOT_FLAKY, TEST, Notes
+from .report import ISSUES, Draft
 from .scan import ScanResult, TestStat
 from .why import (
     ALREADY_FAILING,
@@ -119,10 +122,43 @@ def headline(r: ScanResult) -> list[str]:
     return lines
 
 
+def _test_mark(notes: Notes | None, t: TestStat) -> str | None:
+    mark = notes.for_test(t.test_id, t.jobs) if notes else None
+    return mark.kind if mark else None
+
+
+def _job_mark(notes: Notes | None, name: str) -> str | None:
+    mark = notes.for_job(name) if notes else None
+    return mark.kind if mark else None
+
+
+def notes_check(r: ScanResult, notes: Notes | None) -> tuple[list[str], list[str]]:
+    """Where the team's notes and the evidence disagree: (marked not flaky but flaked here,
+    marked flaky by exact name but not seen flaking here)."""
+    if notes is None:
+        return [], []
+    flaked = [t for t in r.tests if t.times]
+    causes = r.job_causes()
+    disagree = [t.test_id for t in flaked if _test_mark(notes, t) == NOT_FLAKY]
+    disagree += [name for name, _, _ in causes if _job_mark(notes, name) == NOT_FLAKY]
+    seen_tests = {t.test_id for t in flaked}
+    seen_jobs = {name for name, _, _ in causes} | {j for t in flaked for j in t.jobs}
+    unseen = [m.pattern for m in notes.plain(MARKED_FLAKY, TEST) if m.pattern not in seen_tests]
+    unseen += [m.pattern for m in notes.plain(MARKED_FLAKY, JOB) if m.pattern not in seen_jobs]
+    return disagree, unseen
+
+
+def _few(names: list[str], limit: int = 8) -> str:
+    more = f" and {len(names) - limit} more" if len(names) > limit else ""
+    return ", ".join(names[:limit]) + more
+
+
 # --- scan: terminal ---------------------------------------------------------------------
 
 
-def print_scan(r: ScanResult, console: Console, *, limit: int = 15) -> None:
+def print_scan(
+    r: ScanResult, console: Console, *, limit: int = 15, notes: Notes | None = None
+) -> None:
     console.print(Text(f"redherring · {r.repo}", style="bold"))
     for line in headline(r):
         console.print("  " + line)
@@ -182,6 +218,23 @@ def print_scan(r: ScanResult, console: Console, *, limit: int = 15) -> None:
         console.print(table)
         console.print()
 
+    disagree, unseen = notes_check(r, notes)
+    if notes and disagree:
+        console.print(
+            Text(
+                f"Marked not flaky in {notes.source}, but failed and then passed on a re-run here: "
+                + _few(disagree),
+                style="yellow",
+            )
+        )
+    if notes and unseen:
+        console.print(
+            Text(
+                f"Marked flaky in {notes.source}, but not seen flaking here (fixed?): "
+                + _few(unseen),
+                style="dim",
+            )
+        )
     if r.gate_jobs:
         console.print(
             f"Not counted: {len(r.gate_jobs)} quick policy-check failure(s) that passed after a PR update.",
@@ -197,7 +250,7 @@ def print_scan(r: ScanResult, console: Console, *, limit: int = 15) -> None:
 # --- scan: markdown ---------------------------------------------------------------------
 
 
-def scan_markdown(r: ScanResult, *, limit: int = 25) -> str:
+def scan_markdown(r: ScanResult, *, limit: int = 25, notes: Notes | None = None) -> str:
     out = [f"## redherring: {_md_text(r.repo)}", ""]
     out += [f"- {line}" for line in headline(r)]
     out.append("")
@@ -227,6 +280,18 @@ def scan_markdown(r: ScanResult, *, limit: int = 25) -> str:
             cause = ", ".join(f"{k} ({v})" if v > 1 else k for k, v in counter.most_common())
             out.append(f"| {_md_code(name)} | {total} | {cause} |")
         out.append("")
+    disagree, unseen = notes_check(r, notes)
+    if notes and disagree:
+        out.append(
+            f"⚠️ Marked not flaky in {_md_code(notes.source)}, but failed and then passed on a "
+            "re-run here: " + ", ".join(_md_code(x) for x in disagree[:8]) + "\n"
+        )
+    if notes and unseen:
+        out.append(
+            f"_Marked flaky in {_md_code(notes.source)}, but not seen flaking here (fixed?): "
+            + ", ".join(_md_code(x) for x in unseen[:8])
+            + "_\n"
+        )
     if r.gate_jobs:
         out.append(
             f"_Not counted: {len(r.gate_jobs)} quick policy-check failures that passed after a PR update._\n"
@@ -244,7 +309,8 @@ def _t(dt: datetime | None) -> str | None:
     return dt.isoformat() if dt else None
 
 
-def scan_json(r: ScanResult) -> dict[str, Any]:
+def scan_json(r: ScanResult, notes: Notes | None = None) -> dict[str, Any]:
+    disagree, unseen = notes_check(r, notes)
     return {
         "tool": "redherring",
         "version": __version__,
@@ -277,6 +343,7 @@ def scan_json(r: ScanResult) -> dict[str, Any]:
                 "retried_in_job": t.in_job_retries,
                 "message": t.message,
                 "examples": [f.url for f in t.failures[-3:]],
+                "marked": _test_mark(notes, t),
             }
             for t in r.tests
         ],
@@ -285,6 +352,7 @@ def scan_json(r: ScanResult) -> dict[str, Any]:
                 "job": name,
                 "times": total,
                 "causes": dict(counter),
+                "marked": _job_mark(notes, name),
             }
             for name, total, counter in r.job_causes()
         ],
@@ -307,6 +375,13 @@ def scan_json(r: ScanResult) -> dict[str, Any]:
             for j in r.failed_jobs
         ],
         "ledger_jobs_used": len(r.history_jobs),
+        "notes": {
+            "source": notes.source,
+            "marked_not_flaky_but_flaked": disagree,
+            "marked_flaky_not_seen": unseen,
+        }
+        if notes
+        else None,
         "api_requests": r.api_requests,
         "api_requests_free": r.api_free,
     }
@@ -360,6 +435,8 @@ def print_why(e: Explanation, console: Console) -> None:
             f"in the last {e.days} days",
             style="dim",
         )
+    if e.notes:
+        console.print(Text(f"  and the team's notes in {e.notes}", style="dim"))
     console.print()
     for f in e.findings:
         label, color = _BADGE[f.verdict]
@@ -401,8 +478,10 @@ def why_markdown(e: Explanation) -> str:
                 why += f"<br>{_md_code(f.evidence)}"
             out.append(f"| {label} | {what} | {why} ([log]({f.job_url})) |")
         out.append("")
+    notes = f" and {_md_code(e.notes)}" if e.notes else ""
     out.append(
-        f"<sub>redherring {__version__} · compared with the last {e.days} days of this workflow</sub>"
+        f"<sub>redherring {__version__} · compared with the last {e.days} days of this "
+        f"workflow{notes}</sub>"
     )
     return "\n".join(out)
 
@@ -427,6 +506,7 @@ def why_json(e: Explanation) -> dict[str, Any]:
                 "job_url": f.job_url,
                 "detail": f.detail,
                 "evidence": f.evidence or None,
+                "marked": f.mark or None,
                 "history": {
                     "times": f.history.times,
                     "commits": f.history.commits,
@@ -439,7 +519,53 @@ def why_json(e: Explanation) -> dict[str, Any]:
             for f in e.findings
         ],
         "history_days": e.days,
+        "notes": e.notes or None,
     }
+
+
+# --- report -----------------------------------------------------------------------------
+
+
+def print_draft(d: Draft, console: Console) -> None:
+    console.print(Text(f"redherring report · a draft issue for {ISSUES}", style="bold"))
+    console.print(Text(f"  title: {d.title}"))
+    for key, value in d.fields.items():
+        if not value:
+            continue
+        console.print()
+        console.print(Text(f"  {d.labels.get(key, key)}:", style="bold"))
+        for line in value.splitlines():
+            console.print(Text(f"    {line}", style="dim" if key == "log" else ""))
+    console.print()
+    console.print(
+        Text(
+            "Worth sending when the log shows a flaky test or an infrastructure problem (network, "
+            "registry, runner…) that redherring missed. A genuine build or lint error is rightly "
+            "left unknown.",
+            style="dim",
+        )
+    )
+    if d.redactions:
+        console.print(
+            Text(
+                f"Replaced {d.redactions} thing(s) that looked like secrets or personal details "
+                "(tokens, passwords, emails, home folders)."
+            )
+        )
+    console.print(
+        Text(
+            "GitHub already hides your repository's secrets as ***. Read the excerpt anyway: "
+            "only you can tell what's private. You can edit everything on GitHub before sending."
+        )
+    )
+    if d.private:
+        console.print(
+            Text(
+                "This is a private repository: its name and links are left out, but the excerpt "
+                "comes from its logs.",
+                style="yellow",
+            )
+        )
 
 
 def dumps(obj: Any) -> str:

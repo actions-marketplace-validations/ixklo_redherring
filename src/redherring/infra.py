@@ -113,7 +113,7 @@ _CATEGORIES: list[tuple[str, re.Pattern[str]]] = [
             r"|\boperation timed out\b|Unexpected HTTP response: 5\d\d|Canceled because of SSL destruction"
             r"|The requested URL returned error: 5\d\d|Server returned HTTP response code: 5\d\d for URL"
             r"|\bfetch failed\b|Installation error: Request timed out"
-            r"|stream error: stream ID \d+; INTERNAL_ERROR|proxy\.golang\.org.*(?:EOF|reset|timeout)"
+            r"|stream error: stream ID \d+; (?:INTERNAL_ERROR|CANCEL)|proxy\.golang\.org.*(?:EOF|reset|timeout)"
             r"|HTTP Error 5\d\d: (?:Internal Server Error|Bad Gateway|Service Unavailable|Gateway Time-?out)"
             r"|'git', 'clone'.*returned non-zero exit status 128|RPC failed; curl|early EOF"
         ),

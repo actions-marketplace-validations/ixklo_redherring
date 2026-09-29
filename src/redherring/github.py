@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import os
 import shutil
 import subprocess
@@ -28,6 +29,10 @@ _MAX_LIMIT_WAITS = 50
 
 class GitHubError(RuntimeError):
     pass
+
+
+class NotFound(GitHubError):
+    """404: it doesn't exist, or the token can't see it."""
 
 
 class ResponseCache(Protocol):
@@ -173,7 +178,7 @@ class GitHub:
             # Unchanged since last time, and free: 304s don't count against the rate limit.
             return cached[1]
         if resp.status_code == 404:
-            raise GitHubError(
+            raise NotFound(
                 f"not found: {path} (is the repo name right, and can your token see it?)"
             )
         if resp.status_code == 401:
@@ -220,6 +225,19 @@ class GitHub:
         if attempt:
             return self.get(f"/repos/{repo}/actions/runs/{run_id}/attempts/{attempt}")
         return self.get(f"/repos/{repo}/actions/runs/{run_id}")
+
+    def job(self, repo: str, job_id: int) -> dict:
+        return self.get(f"/repos/{repo}/actions/jobs/{job_id}")
+
+    def file_text(self, repo: str, path: str) -> str | None:
+        """A file on the default branch, or None when there's no such file."""
+        try:
+            data = self.get(f"/repos/{repo}/contents/{path}")
+        except NotFound:
+            return None
+        if not isinstance(data, dict) or data.get("encoding") != "base64":
+            return None  # a directory, or a file too big for this endpoint
+        return base64.b64decode(data.get("content") or "").decode("utf-8", errors="replace")
 
     def attempt_jobs(self, repo: str, run_id: int, attempt: int) -> list[dict]:
         return list(
