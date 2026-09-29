@@ -17,7 +17,14 @@ LLM required.
   "probably flaky"; untrusted text is rendered as data.
 - Cheap repeat scans (ETag / free 304s), flat memory, cached readings, pruned cache, one-pass Action.
 
-## Next (0.3)
+## Done in 0.3
+
+- Team notes (`.github/redherring.toml`): mark tests and jobs flaky or not flaky, read from the default
+  branch.
+- `redherring report`: a scrubbed, pre-filled issue for failures it couldn't read or got wrong, sent only
+  by the user.
+
+## Next (0.4)
 
 - **Hidden flakes.** Tests that runners retry inside a *green* job (Playwright `flaky`, nextest `FLAKY`,
   pytest `RERUN`) never make a run red, so they're invisible today. Sample green logs to find them.

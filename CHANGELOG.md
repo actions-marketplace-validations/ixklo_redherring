@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.0 (2026-09-28)
+
+Two ways for redherring to learn what history alone can't tell it.
+
+- **Team notes.** `.github/redherring.toml` marks tests or jobs `flaky` or `not_flaky`, with an
+  optional reason, and `*` wildcards.
+  - A `flaky` failure is a red herring even with no history. A test failing again on the same commit
+    still comes back as "looks real".
+  - A `not_flaky` failure always looks real.
+  - Notes are read from the default branch, so a pull request can't change its own verdicts.
+    `--notes FILE` tries a local file; `--no-notes` ignores them.
+  - `scan` lists where the notes and the evidence disagree. JSON gains `marked` on findings, flaky
+    tests and flaky jobs, and a `notes` field.
+- **`redherring report`** drafts an issue for this repo from a failed job it couldn't read.
+  - The draft holds the output just before the failure (without the step's echoed script) and what
+    redherring made of it.
+  - Tokens, passwords, emails and home folders are replaced first.
+  - You get a preview and a link to GitHub's new-issue page, filled in. Nothing is sent unless you
+    open it and press Submit.
+  - `--wrong` reports a wrong verdict instead. Private repos leave out names and links.
+- Found by trying `report` on real runs: HTTP/2 `stream error: …; CANCEL` is now a network cause.
+- The issue forms match what `report` fills in, and ask the sender to confirm the excerpt holds
+  nothing private.
+
 ## 0.2.1 (2026-09-28)
 
 Cleaner failure snippets, from user feedback:

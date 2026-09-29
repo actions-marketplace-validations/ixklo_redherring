@@ -2,12 +2,15 @@ name: Wrong verdict
 description: redherring called something flaky that wasn't, or missed a red herring.
 labels: [verdict]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        `redherring report <job-url> --wrong` fills in the first three fields for you.
   - type: input
     id: run
     attributes:
       label: Run or job URL
-    validations:
-      required: true
+      description: Public repos only. For a private repo, leave it empty and rely on the excerpt.
   - type: textarea
     id: said
     attributes:
@@ -16,8 +19,21 @@ body:
     validations:
       required: true
   - type: textarea
+    id: log
+    attributes:
+      label: Log excerpt
+      description: The lines around the failure. Remove anything private.
+      render: text
+  - type: textarea
     id: actual
     attributes:
       label: What was actually going on
     validations:
       required: true
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before you submit
+      options:
+        - label: I read everything above, and it contains nothing private.
+          required: true

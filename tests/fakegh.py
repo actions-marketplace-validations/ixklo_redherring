@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import re
@@ -39,6 +40,9 @@ class Fake:
     # Answer If-None-Match with 304 like GitHub does (304s cost no rate limit).
     etags: bool = True
     not_modified: int = 0
+    # Files on the default branch, for /contents/{path}.
+    files: dict[str, str] = field(default_factory=dict)
+    private: bool = False
 
     def run(
         self,
@@ -96,6 +100,8 @@ class Fake:
             "labels": list(labels),
             "html_url": f"https://github.com/{REPO}/actions/runs/{run_id}/job/{job_id}",
             "steps": [{"name": "Run tests", "conclusion": conclusion}],
+            "run_id": run_id,
+            "run_attempt": attempt,
         }
         self.jobs.setdefault((run_id, attempt), []).append(j)
         self.logs[job_id] = log
@@ -129,7 +135,20 @@ class Fake:
             )
 
         if path == f"/repos/{REPO}":
-            return _json({"full_name": REPO, "default_branch": self.default_branch})
+            return _json(
+                {"full_name": REPO, "default_branch": self.default_branch, "private": self.private}
+            )
+        if m := re.fullmatch(rf"/repos/{REPO}/contents/(.+)", path):
+            if m[1] not in self.files:
+                return httpx.Response(404, json={"message": "Not Found"})
+            content = base64.encodebytes(self.files[m[1]].encode("utf-8")).decode("ascii")
+            return _json({"type": "file", "encoding": "base64", "content": content})
+        if m := re.fullmatch(rf"/repos/{REPO}/actions/jobs/(\d+)", path):
+            for jobs in self.jobs.values():
+                for j in jobs:
+                    if j["id"] == int(m[1]):
+                        return _json(j)
+            return httpx.Response(404, json={"message": "Not Found"})
         if m := re.fullmatch(rf"/repos/{REPO}/actions/(?:workflows/(\d+)/)?runs", path):
             return self._list_runs(q, int(m[1]) if m[1] else None)
         if m := re.fullmatch(rf"/repos/{REPO}/actions/runs/(\d+)/attempts/(\d+)/jobs", path):

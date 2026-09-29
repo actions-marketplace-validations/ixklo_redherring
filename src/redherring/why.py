@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from .github import GitHub, GitHubError, parse_time
+from .notes import NOT_FLAKY, Mark, Notes
 from .parsers import FLAKY, TestFailure
 from .scan import (
     FAILED_CONCLUSIONS,
@@ -62,6 +63,8 @@ class Finding:
     # Text copied from the job log (a failure message, the last output). Untrusted: whoever
     # controls the tests controls it, so renderers must escape it.
     evidence: str = ""
+    # "flaky" or "not_flaky" when the team's notes decided the verdict.
+    mark: str = ""
 
 
 @dataclass
@@ -73,6 +76,8 @@ class Explanation:
     findings: list[Finding] = field(default_factory=list)
     history: ScanResult | None = None
     main_branch: str = ""
+    # Where the team's notes came from ("" when there were none).
+    notes: str = ""
 
     @property
     def recommendation(self) -> str:
@@ -113,6 +118,10 @@ class _Context:
     # Earlier attempts of this same run (same commit): failing test id / job name -> attempts.
     earlier_tests: dict[str, list[int]]
     earlier_jobs: dict[str, list[int]]
+    notes: Notes | None = None
+
+    def job_mark(self, job_name: str) -> Mark | None:
+        return self.notes.for_job(job_name) if self.notes else None
 
 
 def explain(
@@ -124,6 +133,7 @@ def explain(
     days: int = 30,
     check_main: bool = True,
     prior: list[FailedJob] | None = None,
+    notes: Notes | None = None,
 ) -> Explanation:
     gh: GitHub = scanner.gh
     run = gh.run(repo, run_id)
@@ -134,6 +144,8 @@ def explain(
     jobs = scanner.attempt_jobs(repo, run_id, attempt, final=finished)
     failed = [j for j in jobs if j.get("conclusion") in FAILED_CONCLUSIONS]
     out = Explanation(repo=repo, run=run, attempt=attempt, days=days)
+    if notes is not None:
+        out.notes = notes.source
     if not failed:
         return out
 
@@ -163,6 +175,7 @@ def explain(
         main_branch=out.main_branch,
         earlier_tests=earlier_tests,
         earlier_jobs=earlier_jobs,
+        notes=notes,
     )
 
     for j in failed:
@@ -186,11 +199,8 @@ def explain(
         )
         reading = found.get(j["id"])
         if reading is None:
-            out.findings.append(
-                Finding(
-                    LOG_EXPIRED, None, fj.job_name, fj.url, "the job log is no longer available"
-                )
-            )
+            fj.kind = KIND_EXPIRED
+            out.findings.append(_judge_opaque(fj, ctx))
             continue
         fj.kind, fj.tests, fj.infra, fj.hint = reading
         fj.kind = refine_kind(fj)
@@ -201,6 +211,20 @@ def explain(
             if not any(t.outcome != FLAKY for t in fj.tests):
                 out.findings.append(_judge_opaque(fj, ctx))
         elif fj.kind == KIND_INFRA and fj.infra:
+            if (mark := ctx.job_mark(fj.job_name)) and mark.kind == NOT_FLAKY:
+                out.findings.append(
+                    Finding(
+                        LOOKS_REAL,
+                        False,
+                        fj.job_name,
+                        fj.url,
+                        f"the log points to an infrastructure problem ({fj.infra.category}), "
+                        f"but {mark.describe(out.notes)}",
+                        evidence=fj.infra.evidence,
+                        mark=mark.kind,
+                    )
+                )
+                continue
             out.findings.append(
                 Finding(
                     INFRASTRUCTURE,
@@ -217,7 +241,13 @@ def explain(
 
 
 def _judge_test(t: TestFailure, job: FailedJob, ctx: _Context) -> Finding:
-    def finding(verdict: str, red_herring: bool, detail: str, stat: TestStat | None = None):
+    def finding(
+        verdict: str,
+        red_herring: bool,
+        detail: str,
+        stat: TestStat | None = None,
+        mark: Mark | None = None,
+    ):
         return Finding(
             verdict,
             red_herring,
@@ -228,8 +258,11 @@ def _judge_test(t: TestFailure, job: FailedJob, ctx: _Context) -> Finding:
             t.framework,
             stat,
             evidence=t.message,
+            mark=mark.kind if mark else "",
         )
 
+    mark = ctx.notes.for_test(t.test_id, [job.job_name]) if ctx.notes else None
+    source = ctx.notes.source if ctx.notes else ""
     if t.test_id in ctx.main_failing:
         return finding(
             ALREADY_FAILING,
@@ -237,6 +270,8 @@ def _judge_test(t: TestFailure, job: FailedJob, ctx: _Context) -> Finding:
             f"the latest finished run on {ctx.main_branch} failed this test too: "
             f"{ctx.main_failing[t.test_id]}",
         )
+    if mark and mark.kind == NOT_FLAKY:
+        return finding(LOOKS_REAL, False, mark.describe(source), mark=mark)
     if earlier := ctx.earlier_tests.get(t.test_id):
         # A re-run is the flakiness check: failing again on the same commit means it isn't one.
         return finding(
@@ -246,6 +281,14 @@ def _judge_test(t: TestFailure, job: FailedJob, ctx: _Context) -> Finding:
             f"(also on attempt {_attempts(earlier)}), so a re-run isn't fixing it",
         )
     stat = ctx.known.get(t.test_id)
+    if mark:
+        detail = mark.describe(source)
+        if stat is not None and stat.times:
+            detail += (
+                f"; it also failed and then passed on a re-run {_times(stat.times)} "
+                f"in the last {ctx.days} days"
+            )
+        return finding(KNOWN_FLAKY, True, detail, stat, mark)
     if stat is not None and stat.times >= KNOWN_FLAKY_MIN:
         where = f" (seen on {', '.join(stat.oses)})" if stat.oses else ""
         return finding(
@@ -267,6 +310,26 @@ def _judge_test(t: TestFailure, job: FailedJob, ctx: _Context) -> Finding:
 
 
 def _judge_opaque(job: FailedJob, ctx: _Context) -> Finding:
+    evidence = "; ".join(
+        part
+        for part in (
+            f"failed step: {job.failed_step}" if job.failed_step else "",
+            f"last output: {job.hint}" if job.hint else "",
+        )
+        if part
+    )
+    mark = ctx.job_mark(job.job_name)
+    source = ctx.notes.source if ctx.notes else ""
+    if mark and mark.kind == NOT_FLAKY:
+        return Finding(
+            LOOKS_REAL,
+            False,
+            job.job_name,
+            job.url,
+            mark.describe(source),
+            evidence=evidence,
+            mark=mark.kind,
+        )
     if job.kind == KIND_EXPIRED:
         return Finding(
             LOG_EXPIRED, None, job.job_name, job.url, "the job log is no longer available"
@@ -288,14 +351,6 @@ def _judge_opaque(job: FailedJob, ctx: _Context) -> Finding:
             job.url,
             "a roll-up job that fails when another job fails; check the jobs it depends on",
         )
-    evidence = "; ".join(
-        part
-        for part in (
-            f"failed step: {job.failed_step}" if job.failed_step else "",
-            f"last output: {job.hint}" if job.hint else "",
-        )
-        if part
-    )
     if earlier := ctx.earlier_jobs.get(job.job_name):
         return Finding(
             LOOKS_REAL,
@@ -306,7 +361,15 @@ def _judge_opaque(job: FailedJob, ctx: _Context) -> Finding:
             f"same commit (also on attempt {_attempts(earlier)})",
             evidence=evidence,
         )
-    if n := ctx.job_history.get(job.job_name, 0):
+    n = ctx.job_history.get(job.job_name, 0)
+    if mark:
+        detail = mark.describe(source)
+        if n:
+            detail += f"; it also failed and then passed on a re-run {_times(n)} in the last {ctx.days} days"
+        return Finding(
+            KNOWN_FLAKY, True, job.job_name, job.url, detail, evidence=evidence, mark=mark.kind
+        )
+    if n:
         return Finding(
             UNEXPLAINED,
             None,

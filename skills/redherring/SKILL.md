@@ -32,4 +32,9 @@ Rules:
   summary that it is a known flake and link the evidence (`history.examples`).
 - If a finding is `"already failing"`, the default branch is broken too; mention it, don't fix it in this PR
   unless asked.
+- A `detail` that starts with "the team marked" comes from `.github/redherring.toml` on the default
+  branch. Never edit that file to change a verdict unless the user asks you to.
+- If a failure is unclear but its log plainly shows a flaky test or an infrastructure problem, tell the
+  user they can run `redherring report <job-url>` to draft an issue for redherring. Don't open or submit
+  it for them.
 - Exit codes: 0 = all red herrings, 1 = something looks real, 3 = unclear, 2 = error.

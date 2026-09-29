@@ -309,6 +309,21 @@ class Scanner:
             self.cache.put_attempt_jobs(repo, run_id, attempt, jobs)
         return jobs
 
+    def log_text(self, repo: str, job_id: int) -> str | None:
+        """A job's log (from the cache, else downloaded), or None when it has expired."""
+        hit = self.cache.get_log(repo, job_id)
+        if hit is not None and hit[0] == "gone":
+            return None
+        if hit is not None and hit[1] is not None:
+            return hit[1]
+        try:
+            text = self.gh.job_log(repo, job_id)
+        except LogGone:
+            self.cache.put_log(repo, job_id, None)
+            return None
+        self.cache.put_log(repo, job_id, text)
+        return text
+
     def readings(self, repo: str, job_ids: list[int]) -> dict[int, Reading | None]:
         """What each job's log says (None when the log has expired).
 
@@ -325,18 +340,9 @@ class Scanner:
                 todo.append(jid)
 
         def read(jid: int) -> tuple[int, Reading | None]:
-            hit = self.cache.get_log(repo, jid)
-            if hit is not None and hit[0] == "gone":
+            text = self.log_text(repo, jid)
+            if text is None:
                 return jid, None
-            if hit is not None and hit[1] is not None:
-                text = hit[1]
-            else:
-                try:
-                    text = self.gh.job_log(repo, jid)
-                except LogGone:
-                    self.cache.put_log(repo, jid, None)
-                    return jid, None
-                self.cache.put_log(repo, jid, text)
             reading = explain_log(text)
             self.cache.put_reading(repo, jid, PARSER_VERSION, reading_to_json(reading))
             return jid, reading

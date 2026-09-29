@@ -18,6 +18,7 @@
   <a href="#redherring-why-is-this-failure-mine">Explain a failure</a> ·
   <a href="#github-action">GitHub Action</a> ·
   <a href="#for-coding-agents">For coding agents</a> ·
+  <a href="#team-notes-what-your-team-already-knows">Team notes</a> ·
   <a href="docs/study/README.md">The study</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -43,7 +44,7 @@ uvx redherring scan OWNER/REPO                                   # what flakes h
 uvx redherring why https://github.com/OWNER/REPO/actions/runs/ID  # is this failure mine?
 ```
 
-It needs a GitHub token to read Actions logs. If you use the [GitHub CLI](https://cli.github.com/), it borrows `gh auth token` automatically; otherwise set `GH_TOKEN`. Any token works for public repositories; private ones need `actions: read`.
+It needs a GitHub token to read Actions logs. If you use the [GitHub CLI](https://cli.github.com/), it borrows `gh auth token` automatically; otherwise set `GH_TOKEN`. Any token works for public repositories; private ones need `actions: read` (and `contents: read` for [team notes](#team-notes-what-your-team-already-knows)).
 
 ## How common is this?
 
@@ -94,6 +95,8 @@ For every failure in the run, one verdict:
 | **LOOKS REAL** | Never seen flaking and no infrastructure cause, **or it already failed on an earlier attempt of this same commit**: a re-run isn't fixing it. Probably your change. |
 | **UNCLEAR** / **POLICY CHECK** | Can't tell from history, or a PR policy check (labels, linked issue) that passes once the PR is updated. |
 
+Your team can add what it already knows, such as "this test is flaky" or "billing tests are never flaky", in [team notes](#team-notes-what-your-team-already-knows).
+
 Exit codes make it scriptable: `0` all red herrings (or nothing failed), `1` something looks real, `3` unclear, `2` error.
 
 ```sh
@@ -113,6 +116,7 @@ Before changing code because CI failed, run `redherring why <run-url> --format j
   commit comes back as "looks real".
 - `recommendation: "investigate"`: fix only the findings with `"red_herring": false`.
 - Never skip, loosen, or delete a test just because it is listed as flaky.
+- Never edit .github/redherring.toml to change a verdict; that file is the team's call.
 ```
 
 Or install the ready-made skill: copy [`skills/redherring/`](skills/redherring/SKILL.md) into your agent's skills folder (for Claude Code, `.claude/skills/redherring/`). More setups are in [`examples/`](examples/).
@@ -137,7 +141,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.2.1
+      - uses: ixklo/redherring@v0.3.0
         with:
           comment: true
 ```
@@ -151,17 +155,18 @@ on:
   schedule: [{ cron: "0 7 * * 1" }]
 permissions:
   actions: read
+  contents: read
 jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: ixklo/redherring@v0.2.1
+      - uses: ixklo/redherring@v0.3.0
         with:
           command: scan
           days: "30"
 ```
 
-Inputs: `command` (`why` or `scan`), `run-id`, `days` (default 14), `workflow`, `ledger`, `comment`, `cache` (default on: keeps downloaded history between runs, because the Actions token allows about 1,000 API requests an hour), `fail-on-real`, `github-token`. Output: `recommendation`. From the command line, the same comment is `redherring why <run> --comment`.
+Inputs: `command` (`why` or `scan`), `run-id`, `days` (default 14), `workflow`, `ledger`, `comment`, `cache` (default on: keeps downloaded history between runs, because the Actions token allows about 1,000 API requests an hour), `fail-on-real`, `github-token`. Output: `recommendation`. From the command line, the same comment is `redherring why <run> --comment`. The Action reads your [team notes](#team-notes-what-your-team-already-knows) automatically; keep `contents: read` in the workflow's permissions.
 
 ## Keep your flake history: the ledger
 
@@ -181,13 +186,53 @@ The file is small JSON (one entry per failed job: test names, cause, commit, OS,
           path: flake-ledger.json
           key: redherring-ledger-${{ github.run_id }}
           restore-keys: redherring-ledger-
-      - uses: ixklo/redherring@v0.2.1
+      - uses: ixklo/redherring@v0.3.0
         with:
           command: scan
           ledger: flake-ledger.json
 ```
 
 Entries older than a year are dropped (`--keep-days`).
+
+## Team notes: what your team already knows
+
+History is the evidence redherring trusts, but your team knows things history can't show yet: that a new integration test is flaky, or that the billing tests must never be waved through. Write them down in `.github/redherring.toml`:
+
+```toml
+[[flaky]]
+test = "tests/integration/test_payments_api.py::test_refund_roundtrip"
+reason = "hits the sandbox API, which times out a few times a week (#412)"
+
+[[flaky]]
+job = "e2e (windows-*)"
+
+[[not_flaky]]
+test = "tests/billing/*"
+reason = "money: never re-run blindly"
+```
+
+- **`flaky`**: a failure counts as a red herring even with no history, and `why` shows your reason. One rule still wins: a test that fails again on the same commit comes back as "looks real", so nobody (and no agent) re-runs forever.
+- **`not_flaky`**: a failure always looks real, whatever the history says. It beats `flaky` when both match.
+- `test` or `job` names a test id (as `redherring scan` prints it) or a job name. `*` matches anything; every other character is literal, so `test_x[1-2]` means exactly that. `reason` is optional.
+- **Read from your default branch**, so a pull request can't change its own verdicts. To try out changes locally first, run `redherring why <run> --notes path/to/file.toml`. `--no-notes` ignores the file.
+- `scan` points out where the notes and the evidence disagree: tests marked not flaky that did flake, and tests marked flaky that haven't flaked lately (maybe fixed?).
+
+A commented example is in [`examples/redherring.toml`](examples/redherring.toml).
+
+## Help it learn: report what it couldn't read
+
+redherring learns new log formats from people's reports, but it never sends anything by itself. When it says "unknown" about a failure whose log clearly shows a flaky test or an infrastructure problem:
+
+```sh
+redherring report https://github.com/OWNER/REPO/actions/runs/RUN/job/JOB
+```
+
+It drafts an issue for this repo: the lines just before the failure and what redherring made of them. Anything that looks like a token, password, email address or home folder is replaced first. It shows you the draft, then gives you a link to GitHub's new-issue page with the draft filled in. Nothing is sent until you read it there and press Submit.
+
+- Given a run URL, it picks the failed job it couldn't read, or asks you to choose one with `--job`.
+- `--wrong` reports a wrong verdict instead, with what `why` said about that job.
+- For private repos, the repo name and links are left out. The excerpt still comes from your logs, so read it.
+- `--format md` prints the draft as Markdown instead, to paste anywhere.
 
 ## How it decides
 
@@ -218,12 +263,12 @@ Missing yours? A parser is one function and a test with a real log excerpt. See 
 - **History has an expiry date.** Job logs are kept for 90 days by default, and [from 1 October 2026](https://github.blog/changelog/2026-08-27-actions-retention-will-cover-checks-workflow-runs-and-statuses/) GitHub deletes the workflow runs themselves once they pass the repo's log retention period (90 days by default, and at most 90 days for public repos). `--days` beyond that finds nothing; use a [ledger](#keep-your-flake-history-the-ledger) to keep what was found.
 - **Only re-runs count.** Repos that never press re-run, or retry inside the job without reporting it, show fewer flakes than they have. Playwright, nextest and pytest-rerunfailures retries are recognised when they appear in a failed job's log.
 - **The first scan of a big repo costs API requests.** A busy monorepo can take a few thousand for 30 days (GitHub allows 5,000 an hour). redherring waits out rate limits on its own, and **later scans are cheap**: it remembers what each log said, and asks GitHub "has this page changed?" before re-downloading. GitHub answers unchanged pages with a free 304. On astral-sh/uv, a repeat 7-day scan took 4 requests instead of 169.
-- **Some jobs stay "unknown".** In a study of 122 popular repos, nearly half of the red-herring jobs (46%) named neither a test nor a known infrastructure cause. Some logs genuinely say nothing ("exit 1"); others use output formats redherring doesn't parse yet. `why` treats those as "unclear", never as safe to re-run. Parser contributions fix this one format at a time.
+- **Some jobs stay "unknown".** In a study of 122 popular repos, nearly half of the red-herring jobs (46%) named neither a test nor a known infrastructure cause. Some logs genuinely say nothing ("exit 1"); others use output formats redherring doesn't parse yet. `why` treats those as "unclear", never as safe to re-run. Each [`redherring report`](#help-it-learn-report-what-it-couldnt-read) or parser contribution fixes one more format.
 - **GitHub Actions only**, for now.
 
 ## Privacy
 
-redherring runs on your machine (or in your own Actions runner) and talks only to the GitHub API. It caches what it downloads in your user cache folder (`%LOCALAPPDATA%\redherring`, `~/Library/Caches/redherring`, or `~/.cache/redherring`; override with `REDHERRING_CACHE`). The cache holds job lists, what each log said, and API pages with their ETags, plus compressed copies of the logs so improved parsers can re-read them without downloading again. Logs are pruned after 120 days (GitHub deletes its own after 90). Set `REDHERRING_KEEP_LOGS=0` to keep only what the logs said; the GitHub Action does this. Nothing is sent anywhere else.
+redherring runs on your machine (or in your own Actions runner) and talks only to the GitHub API. It caches what it downloads in your user cache folder (`%LOCALAPPDATA%\redherring`, `~/Library/Caches/redherring`, or `~/.cache/redherring`; override with `REDHERRING_CACHE`). The cache holds job lists, what each log said, and API pages with their ETags, plus compressed copies of the logs so improved parsers can re-read them without downloading again. Logs are pruned after 120 days (GitHub deletes its own after 90). Set `REDHERRING_KEEP_LOGS=0` to keep only what the logs said; the GitHub Action does this. Nothing is sent anywhere else: `redherring report` only builds a link that you choose whether to open and submit.
 
 ## License
 

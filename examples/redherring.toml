@@ -1,0 +1,23 @@
+# .github/redherring.toml: what your team already knows about its tests.
+#
+# redherring reads this file from your default branch (so a pull request can't change its own
+# verdicts). `*` matches anything; every other character is literal, [brackets] included.
+# Test ids look like redherring prints them: run `redherring scan` to see yours.
+
+# Known flakes: a failure here counts as a red herring even with no history yet.
+# (If it fails again on the same commit, it still comes back as "looks real".)
+[[flaky]]
+test = "tests/integration/test_payments_api.py::test_refund_roundtrip"
+reason = "hits the sandbox API, which times out a few times a week (#412)"
+
+[[flaky]]
+job = "e2e (windows-*)"
+reason = "browser startup on Windows runners; tracked in #388"
+
+# Never flaky: a failure here always looks real, whatever the history says.
+[[not_flaky]]
+test = "tests/billing/*"
+reason = "money: never re-run blindly"
+
+[[not_flaky]]
+job = "deploy"
